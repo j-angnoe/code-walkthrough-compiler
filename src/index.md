@@ -35,7 +35,21 @@ to disk. After the compiler is done, your program is ready.
 ## Example:
 
 Markdown syntax:
-\`\`\`[type] [filename] [--options --options]
+<code>
+
+```[type] [filename] [options]
+
+```
+
+Please note: GFM Doesnt render the filename and options
+so i might want to change this.
+
+example:
+```php examples/my-first-program.php
+<?php
+    echo "Hello world";
+```
+</code>
 
 examples/my-first-program.php:
 ```php examples/my-first-program.php
@@ -306,6 +320,16 @@ main($argv);
 ```
 
 
+## Room for improvement
+- Codeblock filename and options aren't rendered properly by Github Flavoured Markdown
+  this should be changed. Maybe something like 
+- Currently only works on Linux (Mac maybe as well), because of the system() calls.
+- You'd want to use this on a terminal, by running wlkc [path/to/index.md]
+- Split large markdown documents into subdocuments, by following relative markdown links.
+- Include images / usable assets
+
+
+  
 Q.E.D.
  
 
