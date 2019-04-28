@@ -182,9 +182,10 @@ Look for \`\`\`-blocks. This codeblock start may denote its
 syntax type (\`\`\`php for instance, to denote php syntax)
 This is needed for IDE's to allow syntax highlighting inside the code block.
 Next up, we need to instruct the compiler on where to put the file.
-This is achieved by writing the filename after the 
+This is achieved by writing the filename on the same line as the codeblock starts.
 It's also possible to give blocks an id, which can be referenced
-later on.
+later on. You should also be able to supply some processing instructions, for appending,
+prepending and interpretted mode.
 
 
 examples/example-file.txt:
