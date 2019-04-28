@@ -187,12 +187,6 @@ It's also possible to give blocks an id, which can be referenced
 later on. You should also be able to supply some processing instructions, for appending,
 prepending and interpretted mode.
 
-
-examples/example-file.txt:
-```text examples/example-file.txt
-This will be exported to /build/example/example-file.txt
-```
-
 #extract_blocks:
 ```php #extract_blocks
 function extract_blocks($file) {
