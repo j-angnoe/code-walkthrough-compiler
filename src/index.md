@@ -22,10 +22,22 @@ narrative on how to write a walkthrough compiler it's fairly straigh forward to
 port this to any language, one of the benefits of this form of writing a program i guess.
 
 ## Installation
-- Clone this repository
-- Run `php build/extractor.php src/index.md`
-- See that it works.
+Via repo:
 - Requirements: php 7, linux (posix) (this may be improved)
+- Clone this repository
+- run `npm link` or create a symlink `ln -s ./bin/wlkc /usr/local/bin/wlkc` to make wlkc available
+  on your system.
+- See that it works.
+
+Via npm:
+- npm install -g walkthrough-compiler
+- create some folders:
+    - `mkdir mywalkthrough/src`
+    - `mkdir mywalkthrough/build`
+- Start working in mywalkthrough/src/index.md
+- By default it will create a build directory as a sibling to the directory you are 
+working on.
+
 
 ## How it works
 You write the documentation and the code of your program, in a markdown file.
