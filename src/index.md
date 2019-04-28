@@ -300,6 +300,7 @@ function render($block, &$context) {
 }
 
 function interpret($content, &$context) {
+    // replace >>include directives with the real content.
     return preg_replace_callback('/\s*>>include (.+)/', function($match) use (&$context) {
         // echo "Interpretting {$match[0]}\n";
         $includeId = trim($match[1]); // clear whitespace;
@@ -310,6 +311,11 @@ function interpret($content, &$context) {
     }, $content);
 }
 ```
+
+Now, to make a program that will actually run, I'll create a php file 
+and insert my codeblocks in the proper order (as php doesn't do function hoisting like javascript does).
+When this script is called, it will immediately run main and pass it the argv (command arguments).
+You can find this in /build/extractor.php
 
 extractor.php --interpret
 ```php extractor.php --interpret
