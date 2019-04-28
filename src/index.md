@@ -11,7 +11,6 @@ This document you are currently reading  contains the entire source for
 the walkthrough compiler, i'm telling the story, and the compiler will 
 compile the walkthrough compiler from it :-).
 
-
 ## Why
 Code is perfect for instructing computers but a less ideal medium for transmitting
 knowledge, in my experience. I think a compelling story is more effective for
@@ -26,6 +25,7 @@ port this to any language, one of the benefits of this form of writing a program
 - Clone this repository
 - Run `php build/extractor.php src/index.md`
 - See that it works.
+- Requirements: php 7, linux (posix) (this may be improved)
 
 ## How it works
 You write the documentation and the code of your program, in a markdown file.
@@ -318,6 +318,12 @@ extractor.php --interpret
 
 main($argv);
 ```
+ 
+Q.E.D.
+
+Now run:
+`php build/extractor.php src/index.md` to compile this document to a walkthrough compiler.
+
 
 
 ## Room for improvement
@@ -329,9 +335,6 @@ main($argv);
 - Include images / usable assets
 
 
-  
-Q.E.D.
- 
 
 
 
