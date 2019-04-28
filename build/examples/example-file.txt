@@ -1,0 +1,4 @@
+This will be exported to /build/example/example-file.txt
+
+These lines will be appended to the file.
+
