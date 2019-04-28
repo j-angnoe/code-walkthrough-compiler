@@ -1,17 +1,41 @@
 # Walkthrough Compiler
 
-Allows you to write a narrative around your code. It will
-extract the code from your documentation page which will
-be the working program.
+Instead of writing your code and documentation separately,
+you write your code inside the documentation. You take the 
+reader by the hand an implement the code as you tell the story
+of what the sofware should do...
+
+This is a fun experiment.
+
+This document you are currently reading  contains the entire source for 
+the walkthrough compiler, i'm telling the story, and the compiler will 
+compile the walkthrough compiler from it :-).
+
+
+## Why
+Code is perfect for instructing computers but a less ideal medium for transmitting
+knowledge, in my experience. I think a compelling story is more effective for
+transmitting key ideas and subtle considerations that just seeing the code (especially code
+without comments). Our future selves and future collegues will thank us. 
+
+Why PHP: No real reason. I'm fairly comfortable with php. But. This being a 
+narrative on how to write a walkthrough compiler it's fairly straigh forward to 
+port this to any language, one of the benefits of this form of writing a program i guess.
+
+## Installation
+- Clone this repository
+- Run `php build/extractor.php src/index.md`
+- See that it works.
 
 ## How it works
-You write the documentation of your program, in a markdown file.
-Inside this file you walk the reader through all the code. This way
-the documentation, your walkthrough, contains all the sourcecode 
-of your program. The walkthrough compiler will extract the codeblocks
-to source-files, and your program is a fact.
+You write the documentation and the code of your program, in a markdown file.
+The walkthrough compiler will extract the markdown codeblocks and writes them 
+to disk. After the compiler is done, your program is ready. 
 
 ## Example:
+
+Markdown syntax:
+\`\`\`[type] [filename] [--options --options]
 
 examples/my-first-program.php:
 ```php examples/my-first-program.php
@@ -44,7 +68,7 @@ examples/my-first-program.php --append --interpret:
 >>include #php-example-code
 ```
 
-## Now we implement the walkthrough compiler, as walkthrough:
+## implementing the walkthrough compiler:
 
 ## Overview
 
@@ -130,16 +154,13 @@ function main($argv) {
 }
 ```
 
-
-
-
 ## Extracting
 Extracting blocks is pretty straight forward.
-Look for ```-blocks. This codeblock start may denote its 
-syntax type (```php for instance, to denote php syntax)
+Look for \`\`\`-blocks. This codeblock start may denote its 
+syntax type (\`\`\`php for instance, to denote php syntax)
 This is needed for IDE's to allow syntax highlighting inside the code block.
-Next up, we need to be denote that content inside the block must be
-exportable to a file.
+Next up, we need to instruct the compiler on where to put the file.
+This is achieved by writing the filename after the 
 It's also possible to give blocks an id, which can be referenced
 later on.
 
