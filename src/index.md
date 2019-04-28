@@ -294,8 +294,8 @@ function interpret($content, &$context) {
 }
 ```
 
-extractor.php --interpret:
-```php extractor.php --interpret:
+extractor.php --interpret
+```php extractor.php --interpret
 <?php
 
 >>include #extract_blocks

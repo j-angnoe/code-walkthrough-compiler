@@ -93,7 +93,9 @@ function main($argv) {
 
     // set up some paths
     $source_directory = dirname($file);
-    $output_directory = realpath($source_directory . '/../build');
+
+    // this is still pretty naive. 
+    $output_directory = $source_directory . '/../build';
     $backup_directory = $source_directory . '/../backups';
 
     system("mkdir -p '$backup_directory'");
