@@ -1,0 +1,31 @@
+{
+  "name": "walkthrough-compiler",
+  "version": "0.0.1",
+  "description": "A experimental compiler that compiles walkthrough documentation to working programs",
+  "main": "bin/wlkc",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "files": [
+    "bin",
+    "build"
+  ],
+  "bin": {
+    "wlkc": "./bin/wlkc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/j-angnoe/code-walkthrough-compiler.git"
+  },
+  "keywords": [
+    "Walkthrough",
+    "markdown",
+    "compiler"
+  ],
+  "author": "Joshua Angnoe <joshua@fluxfx.nl>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/j-angnoe/code-walkthrough-compiler/issues"
+  },
+  "homepage": "https://github.com/j-angnoe/code-walkthrough-compiler#readme"
+}

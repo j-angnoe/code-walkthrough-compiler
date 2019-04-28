@@ -35,23 +35,16 @@ to disk. After the compiler is done, your program is ready.
 ## Example:
 
 Markdown syntax:
-<code>
 
-```[type] [filename] [options]
 
-```
+\`\`\`[type] [filename] [options]
+    content for document here.
+\`\`\`
 
 Please note: GFM Doesnt render the filename and options
-so i might want to change this.
+so i might want to change this. You may want to check the Raw source of this 
+document to get the full picture.
 
-example:
-```php examples/my-first-program.php
-<?php
-    echo "Hello world";
-```
-</code>
-
-examples/my-first-program.php:
 ```php examples/my-first-program.php
 <?php
     echo "Hello world";
