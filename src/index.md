@@ -198,6 +198,8 @@ function extract_blocks($file) {
 
             $header = substr(trim($line), 3);
 
+            // Parse the codeblock line for filename and options, format:
+            // ```[markdown-syntax] [filename] [--option --option?]
             if (preg_match('/(?<type>[a-z]+\s)?(?<file>(#[a-z_-]+|.+\.[a-z]+))(\s+(?<options>-.+))?/i', $header, $match)) {
                 //print_r($match);
 
