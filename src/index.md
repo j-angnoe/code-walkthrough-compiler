@@ -38,6 +38,7 @@ Via npm:
 - By default it will create a build directory as a sibling to the directory you are 
 working on.
 
+Be warned though: This is still a little rough on the edges ;-)
 
 ## How it works
 You write the documentation and the code of your program, in a markdown file.
