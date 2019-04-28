@@ -13,6 +13,7 @@ to source-files, and your program is a fact.
 
 ## Example:
 
+examples/my-first-program.php:
 ```php examples/my-first-program.php
 <?php
     echo "Hello world";
@@ -22,12 +23,14 @@ When you run the compiler, it will write this file to disk.
 
 Later on, we may add to this file, using the --append option:
 
+examples/my-first-program.php --append:
 ```php examples/my-first-program.php --append
     echo "This is added";
 ```
 
 You may focus on a specific block of code and use it in a file later on.
 
+#php-example-code:
 ```php #php-example-code
     for ($i=0;$i<10;$i++) {
         echo "Number $i\n";
@@ -36,6 +39,7 @@ You may focus on a specific block of code and use it in a file later on.
 
 Now we reuse it in our example file with the special code >>include [id]. To trigger this type of interpretted mode you need to add the --interpret option.
 
+examples/my-first-program.php --append --interpret:
 ```php examples/my-first-program.php --append --interpret
 >>include #php-example-code
 ```
@@ -47,6 +51,7 @@ Now we reuse it in our example file with the special code >>include [id]. To tri
 Step one: The standalone compiler. It will be a program executed
 from terminal. It will receive an file (entrypoint) as argument.
 
+#main-read-file-argument:
 ```php #main-read-file-argument
     // read the file
     $file = realpath($argv[1]);
@@ -59,6 +64,7 @@ clear stuff from earlier runs. To prevent loosing previously working
 versions of the compiler I move the previously built directory to 
 backup.
 
+#main-setup:
 ```php #main-setup 
     // set up some paths
     $source_directory = dirname($file);
@@ -83,6 +89,7 @@ It will:
 - process the codeblocks
 - export the codeblocks to filesystem.
 
+#main --interpret:
 ```php #main --interpret
 function main($argv) {
 
@@ -136,11 +143,13 @@ exportable to a file.
 It's also possible to give blocks an id, which can be referenced
 later on.
 
-Example:
+
+examples/example-file.txt:
 ```text examples/example-file.txt
 This will be exported to /build/example/example-file.txt
 ```
 
+#extract_blocks:
 ```php #extract_blocks
 function extract_blocks($file) {
     $fh = fopen($file, 'r');
@@ -198,6 +207,7 @@ Some blocks just put out content for a given file, like the
 example file above. Besides this, we also want to support 
 special operations, for instance, appending to a file, like so:
 
+examples/example-file.txt --append:
 ```text examples/example-file.txt --append
 These lines will be appended to the file.
 ```
@@ -205,6 +215,7 @@ These lines will be appended to the file.
 Besides direct output to files, we want named blocks for later
 use (or reuse), like so:
 
+#example-block:
 ```test #example-block
 This is an example block and wont be exported to filesystem.
 But, we can reference it later.
@@ -213,6 +224,7 @@ But, we can reference it later.
 To (re)use defined blocks, we need to have some syntax. This
 is provided via the --interpreted (or -i) mode:
 
+examples/dynamic-example.txt --interpret:
 ```test examples/dynamic-example.txt --interpret
 Inside this file we may use special syntax to include blocks:
 >>include #example-block
@@ -221,6 +233,7 @@ It's also possible to import the example file:
 >>include examples/example-file.txt
 ```
 
+#render:
 ```php #render
 function render($block, &$context) {
     $prepend = '';
@@ -258,7 +271,8 @@ function interpret($content, &$context) {
 }
 ```
 
-```php extractor.php -i
+extractor.php --interpret:
+```php extractor.php --interpret:
 <?php
 
 >>include #extract_blocks
@@ -268,14 +282,8 @@ function interpret($content, &$context) {
 main($argv);
 ```
 
-I'll start with a simple php script to start with. This script needs
-to be available because it's essential to start the compiler.
 
-[basic-extractor.php](basic-extractor.php)
-
-
-
-
+Q.E.D.
  
 
 
