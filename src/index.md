@@ -49,11 +49,11 @@ to disk. After the compiler is done, your program is ready.
 
 Markdown syntax:
 
-
+<code>
 \`\`\`[type] [filename] [options]
     content for document here.
 \`\`\`
-
+</code>
 Please note: GFM Doesnt render the filename and options
 so i might want to change this. You may want to check the Raw source of this 
 document to get the full picture.
