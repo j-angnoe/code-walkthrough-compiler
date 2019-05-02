@@ -36,14 +36,6 @@ Via repo:
 
 Via npm:
 - npm install -g walkthrough-compiler
-- create some folders:
-    - `mkdir mywalkthrough/src`
-    - `mkdir mywalkthrough/build`
-- Start working in mywalkthrough/src/index.md
-- By default it will create a build directory as a sibling to the directory you are 
-working on.
-
-Be warned though: This is still a little rough on the edges ;-)
 
 ## How it works
 You write the documentation and the code of your program, in a markdown file.
