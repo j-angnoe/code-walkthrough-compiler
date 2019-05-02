@@ -14,6 +14,7 @@ compile the walkthrough compiler from it :-).
 There's actually a name for this, it's called Literate programming,
 I'll expand on the literate programming in [this document](on-literate-programming.md)
 
+For mobile users: Go here to see the [full text](src/index.md)
 
 ## Why
 Code is perfect for instructing computers but a less ideal medium for transmitting
@@ -369,7 +370,6 @@ These lines will be appended to the file.
 Besides direct output to files, we want named blocks for later
 use (or reuse), like so:
 
-#example-block:
 ```test \
 << #example-block >>=
 This is an example block and wont be exported to filesystem.
