@@ -66,7 +66,7 @@ async function main() {
     }
 
 
-    // Step two: Render/interpret 
+        // Step two: Render/interpret 
     var renderedFiles = {};
     Object.keys(context).map(blockId => {
         var renderedContent = render(context[blockId], context);
@@ -125,9 +125,10 @@ var readline = require('readline');
 var EventEmitter = require('events');
 var blockOptionsParser = require('yargs')
     .option('interpret', {
-        alias: 'i',
-        default: true
+        alias: 'i'
     })
+    .option('already-merged')
+    .option('dont-include')
     .option('prepend', { alias: 'p'})
     .option('append', { alias: 'a'})
 ;
@@ -158,19 +159,26 @@ function extract_blocks(file, options) {
     var startCapture = startLine => {        
         var lines = [];
         var captureBlock = line => {
-            if (line.substr(0, 3) === '```') {
+            var isBlockEnd = line.substr(0, 3) === '```';
+            if (isBlockEnd) {
                 rl.removeListener('line', captureBlock);
-                var header = parseBlockHeader(startLine);
-                header.file = file;
-                emitter.emit('block', {
-                    block_header: header,
-                    block_content: lines
-                });
+                var header = parseBlockHeader(startLine, lines);
+
+                var skipBlock = header.options['dont-include'] || header.options['already-merged'];
+
+                if (!skipBlock && header) {
+                    header.file = file;
+                    emitter.emit('block', {
+                        block_header: header,
+                        block_content: lines
+                    });
+                }
                 rl.on('line', awaitBlock);
             } else {
                 lines.push(line);
             }
         };
+
         rl.on('line', captureBlock);
     }
 
@@ -227,7 +235,15 @@ function extract_blocks(file, options) {
 
 // Parse block header:
 // convert ```[type] [filename] [options?].
-function parseBlockHeader(startLine) {
+function parseBlockHeader(startLine, lines) {
+        // if a markdown codeblock unit ends with a backslash
+    // the next line will also be considered as header.
+    if (startLine.substr(-1,1) === "\\") {
+        startLine = startLine.substr(0, -1) + " " + lines.shift();
+    }
+
+
+
     // Split options
     var [tmp, options] = startLine.replace(/\s+/g, ' ').split(/\s-/);
     var pieces;
@@ -292,26 +308,15 @@ function render(block, context) {
 }
 
 function interpret(content, context) {
-    content = content
-        // \>\>include block
-        .replace(/(\n\s*)>>include\s+(.+)/g, (match, space, includeId) => {
-            if (!(includeId in context)) {
-                throw new Error(includeId + ' not found');
-            }
-            return (space||'') + render(context[includeId], context);
-        })
-        
-    ;
-
-        // Ability to parse \<\< Chunkname \>\> references.
+    // Ability to parse \<\< Chunkname \>\> references.
     content = content.replace(/(^|(\n\s*))<<\s*(.+?)\s*>>/g, (match, space, spaceBound, includeId) => {
+        // When a block cannot be found, just print a notice.
         if (!(includeId in context)) {
-            throw new Error(includeId + ' not found');
+            console.log('[notice]: `' + includeId + ' not found');
+            return '';
         }
-
         return (space||'') + render(context[includeId], context);
     });
-
 
     return content;
 }

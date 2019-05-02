@@ -264,9 +264,10 @@ function extract_blocks(file, options) {
     var startCapture = startLine => {        
         var lines = [];
         var captureBlock = line => {
-            if (line.substr(0, 3) === '```') {
+            var isBlockEnd = line.substr(0, 3) === '```';
+            if (isBlockEnd) {
                 rl.removeListener('line', captureBlock);
-                var header = parseBlockHeader(startLine);
+                var header = parseBlockHeader(startLine, lines);
 
                 var skipBlock = header.options['dont-include'] || header.options['already-merged'];
 
@@ -282,6 +283,7 @@ function extract_blocks(file, options) {
                 lines.push(line);
             }
         };
+
         rl.on('line', captureBlock);
     }
 
@@ -308,7 +310,9 @@ function extract_blocks(file, options) {
 
 // Parse block header:
 // convert ```[type] [filename] [options?].
-function parseBlockHeader(startLine) {
+function parseBlockHeader(startLine, lines) {
+    << #parseBlockHeader multiline mode >>
+
     // Split options
     var [tmp, options] = startLine.replace(/\s+/g, ' ').split(/\s-/);
     var pieces;
@@ -508,7 +512,7 @@ Now run:
 
 
 ## Room for improvement
-- Codeblock filename and options aren't rendered properly by Github Flavoured Markdown
+- Codeblock filename and options aren't rendered properly by Github Flavoured Markdown [GFM Fix](./fixing-github-flavoured-markdown.md)
   this should be changed. Maybe something like 
 - Include images / usable assets
 
