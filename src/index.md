@@ -360,7 +360,9 @@ Some blocks just put out content for a given file, like the
 example file above. Besides this, we also want to support 
 special operations, for instance, appending to a file, like so:
 
-```text << examples/example-file.txt >>+=
+```text \
+<< examples/example-file.txt >>+=
+
 These lines will be appended to the file.
 ```
 
