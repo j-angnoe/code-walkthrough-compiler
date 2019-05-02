@@ -12,7 +12,8 @@ We want to be able to output a file that is executable. To implement this
 we need to add this:
 
 ```js \
-<< #Additional file operations >>=
+// << #Additional file operations >>=
+
 if (file.options.chmod) {
     var octalPermissions = parseInt(file.options.chmod, 8);
 
@@ -30,7 +31,7 @@ from this file as well. We should only include links to md files. Images
 will be recognized and skipped. Only local files will be parsed.
 
 ```js \
-<< #extract_blocks_parser_extensions >>=
+// << #extract_blocks_parser_extensions >>=
 
     // only md files.
 
@@ -78,7 +79,8 @@ all the blocks in every other file.
 
 ### Prevent double inclusion:
 ```js \
-<< #extract_blocks_prevent_double_processing >>=
+// << #extract_blocks_prevent_double_processing >>=
+
     extract_blocks.processedFiles = extract_blocks.processedFiles || [];
     if (extract_blocks.processedFiles.indexOf(file) >= 0) {
         setTimeout(() => {

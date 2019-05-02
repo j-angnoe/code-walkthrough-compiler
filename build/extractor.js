@@ -1,4 +1,5 @@
 
+
 const path = require('path');
 const mkdirp = require('mkdirp');
 
@@ -6,7 +7,8 @@ let VERBOSE = false;
 let DEBUG = false;
 
 async function main() {
-        var argv = require('yargs')
+    
+    var argv = require('yargs')
         .option('output', {
             alias: 'o',
             describe: 'directory to output to'
@@ -35,7 +37,8 @@ async function main() {
     console.log("Reading file " + source_file);
 
 
-        // Step one: extract
+    
+    // Step one: extract
     var context = {};
 
     var blockOptions = {};
@@ -66,7 +69,8 @@ async function main() {
     }
 
 
-        // Step two: Render/interpret 
+    
+    // Step two: Render/interpret 
     var renderedFiles = {};
     Object.keys(context).map(blockId => {
         var renderedContent = render(context[blockId], context);
@@ -106,7 +110,8 @@ async function main() {
                 console.log(`Written ${output_file}`);
             }
 
-            if (file.options.chmod) {
+            
+if (file.options.chmod) {
     var octalPermissions = parseInt(file.options.chmod, 8);
 
     console.log('Chmod ' + output_file + ' to ' + file.options.chmod);
@@ -139,7 +144,8 @@ function extract_blocks(file, options) {
     var promises = [];
     var emitter = new EventEmitter();
 
-        extract_blocks.processedFiles = extract_blocks.processedFiles || [];
+    
+    extract_blocks.processedFiles = extract_blocks.processedFiles || [];
     if (extract_blocks.processedFiles.indexOf(file) >= 0) {
         setTimeout(() => {
             console.log('File was already processed.');
@@ -236,10 +242,17 @@ function extract_blocks(file, options) {
 // Parse block header:
 // convert ```[type] [filename] [options?].
 function parseBlockHeader(startLine, lines) {
-        // if a markdown codeblock unit ends with a backslash
+    
+    // if a markdown codeblock unit ends with a backslash
     // the next line will also be considered as header.
     if (startLine.substr(-1,1) === "\\") {
-        startLine = startLine.substr(0, -1) + " " + lines.shift();
+        var extraLine = lines.shift();
+
+        // The first extra line may contain a line comment
+        // for better display.
+        extraLine = extraLine.replace(/^(#|\/\/)\s*/g, '');
+
+        startLine = startLine.substr(0, -1) + " " + extraLine;
     }
 
 

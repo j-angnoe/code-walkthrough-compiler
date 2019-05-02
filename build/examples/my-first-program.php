@@ -6,4 +6,3 @@
         echo "Number $i\n";
     }
 
-

@@ -26,7 +26,8 @@ It did inspire me to change the `>>include` syntax to noweb style:
     <<Chunk name reference>>
 
 ```js \
-<< #extra-interpreter-stuff >>+= --already-merged
+// << #extra-interpreter-stuff >>+= --already-merged
+
     // Ability to parse \<\< Chunkname \>\> references.
     content = content.replace(/(^|(\n\s*))<<\s*(.+?)\s*>>/g, (match, space, spaceBound, includeId) => {
         if (!(includeId in context)) {

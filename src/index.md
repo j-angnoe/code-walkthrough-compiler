@@ -63,7 +63,7 @@ so i might want to change this. You may want to check the Raw source of this
 document to get the full picture.
 
 ```php \
-<< examples/my-first-program.php >>
+// << examples/my-first-program.php >>
 <?php
     echo "Hello world";
 ```
@@ -73,14 +73,14 @@ When you run the compiler, it will write this file to disk.
 Later on, we may add to this file, using the --append option:
 
 ```php \
-<< examples/my-first-program.php >>+=
+// << examples/my-first-program.php >>+=
     echo "This is added";
 ```
 
 You may focus on a specific block of code and use it in a file later on.
 
 ```php \
-<< #php-example-code >>
+// << #php-example-code >>
     for ($i=0;$i<10;$i++) {
         echo "Number $i\n";
     }
@@ -91,7 +91,8 @@ is the default behaviour. To prevent the compiler from touching it, you may
 supply `--dont-interpret`
 
 ```php \
-<< examples/my-first-program.php >>+= 
+// << examples/my-first-program.php >>+= 
+
 <<#php-example-code>>
 ```
 
@@ -104,7 +105,8 @@ from terminal. It will receive an file (entrypoint) as argument.
 It may also receive a directory to output in.
 
 ```js \
-<< #main-arguments >>=
+// << #main-arguments >>=
+
     var argv = require('yargs')
         .option('output', {
             alias: 'o',
@@ -142,7 +144,7 @@ versions of the compiler I move the previously built directory to
 backup.
 
 ```js \
-<< #main-setup >>=
+// << #main-setup >>=
 
     // @todo - clear out build directory.
 
@@ -168,7 +170,8 @@ backup.
 ```
 
 ```js \
-<< #main >>=
+// << #main >>=
+
 const path = require('path');
 const mkdirp = require('mkdirp');
 
@@ -202,7 +205,8 @@ from the given file. This needs to happen sequentially, because
 we can only start rendering after we have collected all the blocks.
 
 ```js \
-<< #Collect / extract blocks from given file >>=
+// << #Collect / extract blocks from given file >>=
+
     // Step one: extract
     var context = {};
 
@@ -235,7 +239,7 @@ we can only start rendering after we have collected all the blocks.
 ```
 
 ```js \
-<<#extract_blocks>>=
+// <<#extract_blocks>>=
 
 var fs = require('fs');
 var readline = require('readline');
@@ -386,7 +390,7 @@ It's also possible to import the example file:
 
 
 ```js \
-<< #render >>=
+// << #render >>=
 
 function render(block, context) {
     var prepend = '';
@@ -438,7 +442,8 @@ Now we have the per-file rendering in place, we still need
 to render all our collected blocks. 
 
 ```js \
-<< #Render the collected blocks to files >>=
+// << #Render the collected blocks to files >>=
+
     // Step two: Render/interpret 
     var renderedFiles = {};
     Object.keys(context).map(blockId => {
@@ -460,7 +465,7 @@ This is fairly straigh forward.
 We'll only skip writing blocks that start with #.
 
 ```js \
-<< #Write the files to disk >>=
+// << #Write the files to disk >>=
 
     // Step three: Write to disk.
     Object.keys(renderedFiles).map(fileId => {
@@ -497,7 +502,7 @@ When this script is called, it will immediately run main and pass it the argv (c
 You can find this in /build/extractor.php
 
 ```js \
-<< extractor.js >>=
+// << extractor.js >>=
 
 << #main >>
 << #extract_blocks >>
