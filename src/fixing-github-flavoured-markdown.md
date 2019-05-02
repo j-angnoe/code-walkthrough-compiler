@@ -13,7 +13,8 @@ So, to fix it, we need the startLine must expand to the next line.
 
 Here goes:
 
-```js << #parseBlockHeader multiline mode >>=
+```js \
+<< #parseBlockHeader multiline mode >>=
     // if a markdown codeblock unit ends with a backslash
     // the next line will also be considered as header.
     if (startLine.substr(-1,1) === "\\") {

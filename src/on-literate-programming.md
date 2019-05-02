@@ -25,7 +25,8 @@ It did inspire me to change the `>>include` syntax to noweb style:
 
     <<Chunk name reference>>
 
-```js << #extra-interpreter-stuff >> --already-merged
+```js \
+<< #extra-interpreter-stuff >>+= --already-merged
     // Ability to parse \<\< Chunkname \>\> references.
     content = content.replace(/(^|(\n\s*))<<\s*(.+?)\s*>>/g, (match, space, spaceBound, includeId) => {
         if (!(includeId in context)) {
@@ -39,11 +40,13 @@ It did inspire me to change the `>>include` syntax to noweb style:
 An added bonus is that block ids may now contain spaces.
 
 And this is what one may do with it:
-```text << #sample-text >>
+```text \
+<< #sample-text >>=
 This is a sample text
 ```
 
-```text << examples/noweb-references.txt >>
+```text \
+<< examples/noweb-references.txt >>=
 <<#sample-text>>
 
 << #sample-text >>

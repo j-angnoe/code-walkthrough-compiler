@@ -11,7 +11,8 @@ require('../extractor.js');
 We want to be able to output a file that is executable. To implement this
 we need to add this:
 
-```js << #Additional file operations >>
+```js \
+<< #Additional file operations >>=
 if (file.options.chmod) {
     var octalPermissions = parseInt(file.options.chmod, 8);
 
@@ -28,7 +29,8 @@ When we encounter a markdown link in the document, we want to extract blocks
 from this file as well. We should only include links to md files. Images
 will be recognized and skipped. Only local files will be parsed.
 
-```js << #extract_blocks_parser_extensions >>
+```js \
+<< #extract_blocks_parser_extensions >>=
 
     // only md files.
 
@@ -75,7 +77,8 @@ Now, when we run extract blocks we will receive blocks of this file including
 all the blocks in every other file. 
 
 ### Prevent double inclusion:
-```js << #extract_blocks_prevent_double_processing >>
+```js \
+<< #extract_blocks_prevent_double_processing >>=
     extract_blocks.processedFiles = extract_blocks.processedFiles || [];
     if (extract_blocks.processedFiles.indexOf(file) >= 0) {
         setTimeout(() => {

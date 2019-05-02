@@ -62,7 +62,8 @@ Please note: GFM Doesnt render the filename and options
 so i might want to change this. You may want to check the Raw source of this 
 document to get the full picture.
 
-```php << examples/my-first-program.php >>
+```php \
+<< examples/my-first-program.php >>
 <?php
     echo "Hello world";
 ```
@@ -71,13 +72,15 @@ When you run the compiler, it will write this file to disk.
 
 Later on, we may add to this file, using the --append option:
 
-```php << examples/my-first-program.php >>+=
+```php \
+<< examples/my-first-program.php >>+=
     echo "This is added";
 ```
 
 You may focus on a specific block of code and use it in a file later on.
 
-```php << #php-example-code >>
+```php \
+<< #php-example-code >>
     for ($i=0;$i<10;$i++) {
         echo "Number $i\n";
     }
@@ -87,10 +90,9 @@ Now we reuse it in our example file with the special code \<\< [id] \>\>. This
 is the default behaviour. To prevent the compiler from touching it, you may
 supply `--dont-interpret`
 
-```php << examples/my-first-program.php >>+= 
-
+```php \
+<< examples/my-first-program.php >>+= 
 <<#php-example-code>>
-
 ```
 
 ## implementing the walkthrough compiler:
@@ -101,8 +103,8 @@ Step one: The standalone compiler. It will be a program executed
 from terminal. It will receive an file (entrypoint) as argument.
 It may also receive a directory to output in.
 
-#main-arguments:
-```js << #main-arguments >>
+```js \
+<< #main-arguments >>=
     var argv = require('yargs')
         .option('output', {
             alias: 'o',
@@ -139,8 +141,8 @@ clear stuff from earlier runs. To prevent loosing previously working
 versions of the compiler I move the previously built directory to 
 backup.
 
-#main-setup:
-```js #main-setup 
+```js \
+<< #main-setup >>=
 
     // @todo - clear out build directory.
 
@@ -164,9 +166,9 @@ backup.
     system("mkdir -p '$output_directory';");
     */
 ```
-#main --interpret:
 
-```js << #main >>
+```js \
+<< #main >>=
 const path = require('path');
 const mkdirp = require('mkdirp');
 
@@ -199,7 +201,8 @@ Inside the main process we need to start collecting all the blocks
 from the given file. This needs to happen sequentially, because 
 we can only start rendering after we have collected all the blocks.
 
-```js << #Collect / extract blocks from given file >>
+```js \
+<< #Collect / extract blocks from given file >>=
     // Step one: extract
     var context = {};
 
@@ -231,8 +234,8 @@ we can only start rendering after we have collected all the blocks.
     }
 ```
 
-#extract_blocks:
-```js #extract_blocks --interpret
+```js \
+<<#extract_blocks>>=
 
 var fs = require('fs');
 var readline = require('readline');
@@ -361,7 +364,8 @@ Besides direct output to files, we want named blocks for later
 use (or reuse), like so:
 
 #example-block:
-```test << #example-block >>
+```test \
+<< #example-block >>=
 This is an example block and wont be exported to filesystem.
 But, we can reference it later.
 ```
@@ -369,7 +373,8 @@ But, we can reference it later.
 To (re)use defined blocks, we need to have some syntax. This
 is done by the interpret function. This is default behaviour 
 
-```test << examples/dynamic-example.txt >>
+```test \
+<< examples/dynamic-example.txt >>=
 Inside this file we may use special syntax to include blocks:
 << #example-block >>
 
@@ -379,8 +384,9 @@ It's also possible to import the example file:
 
 @todo - prevent infinite loops
 
-#render:
-```js #render --interpret
+
+```js \
+<< #render >>=
 
 function render(block, context) {
     var prepend = '';
@@ -431,7 +437,8 @@ function interpret(content, context) {
 Now we have the per-file rendering in place, we still need
 to render all our collected blocks. 
 
-```js << #Render the collected blocks to files >>
+```js \
+<< #Render the collected blocks to files >>=
     // Step two: Render/interpret 
     var renderedFiles = {};
     Object.keys(context).map(blockId => {
@@ -452,7 +459,8 @@ The rendered files now need to be written to disk.
 This is fairly straigh forward. 
 We'll only skip writing blocks that start with #.
 
-```js << #Write the files to disk >>
+```js \
+<< #Write the files to disk >>=
 
     // Step three: Write to disk.
     Object.keys(renderedFiles).map(fileId => {
@@ -488,7 +496,8 @@ and insert my codeblocks in the proper order (as php doesn't do function hoistin
 When this script is called, it will immediately run main and pass it the argv (command arguments).
 You can find this in /build/extractor.php
 
-```js << extractor.js >>
+```js \
+<< extractor.js >>=
 
 << #main >>
 << #extract_blocks >>

@@ -13,7 +13,8 @@ And one-line mode:
 This syntax could easily be done with an updated parseBlockHeader
 function, like so:
 
-```js << #extract_blocks >>
+```js \
+<< #extract_blocks >>+= --already-merged
 function parseBlockHeader(startLine) {
     // Split options
     var [tmp, options] = startLine.replace(/\s+/g, ' ').split(/\s-/);
@@ -48,7 +49,8 @@ function parseBlockHeader(startLine) {
 
 ```
 
-```js run/parseBlockHeader.js --interpret
+```js \
+<< run/parseBlockHeader.js >> --dont-include
 <<#extract_blocks>>
 var result = parseBlockHeader('```js << chunk id >>+= hoi' + "\nhoi\nhoi" + '```');
 console.log(result);
