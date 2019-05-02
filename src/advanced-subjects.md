@@ -3,7 +3,7 @@
 ## Chmod file option
 
 Example: 
-```shell bin/wlkc --chmod 0755
+```shell << bin/wlkc >> --chmod 0755
 #!/usr/bin/env node 
 require('../extractor.js');
 ```
@@ -11,7 +11,7 @@ require('../extractor.js');
 We want to be able to output a file that is executable. To implement this
 we need to add this:
 
-```js #additional-file-operations
+```js << #Additional file operations >>
 if (file.options.chmod) {
     var octalPermissions = parseInt(file.options.chmod, 8);
 
@@ -25,9 +25,10 @@ if (file.options.chmod) {
 
 Bigger codebases require us to organize our source code in different files.
 When we encounter a markdown link in the document, we want to extract blocks
-from this file as well. We should only include links to md files.
+from this file as well. We should only include links to md files. Images
+will be recognized and skipped. Only local files will be parsed.
 
-```js #extract_blocks_parser_extensions
+```js << #extract_blocks_parser_extensions >>
 
     // only md files.
 
@@ -60,10 +61,7 @@ from this file as well. We should only include links to md files.
     }
 ```
 
-@todo Only include a document once.
-@todo Only open documents that are part of the repository.
 @todo error handling: Dont die when a file cannot be read. 
-@todo Images (like images, should be skipped)
 
 Now we where faced with a different challenge. Extract blocks must send
 a signal when its done reading the file. But now, done means done including
@@ -77,7 +75,7 @@ Now, when we run extract blocks we will receive blocks of this file including
 all the blocks in every other file. 
 
 ### Prevent double inclusion:
-```js #extract_blocks_prevent_double_processing
+```js << #extract_blocks_prevent_double_processing >>
     extract_blocks.processedFiles = extract_blocks.processedFiles || [];
     if (extract_blocks.processedFiles.indexOf(file) >= 0) {
         setTimeout(() => {
@@ -100,6 +98,25 @@ Ideally we would want to store this information close to the code that depends o
 dependency. So basically I would like to have a mechanism that allows write down individual
 dependencies and stuff.
 
+A possible solution for this would be to append
+to a block.
+
+Some proposals for this syntax:
+
+Proposal 1, noweb style:
+\<\<Depencencies\>\>+= yargs@1
+- Ask yourself, inside or outside of code-blocks?
+
+Proposal 2, markdown style:
+No changes:
+\`\`\` Dependencies --append
+yargs@1
+\`\`\`
+
+Some changes required:
+Single line blocks.
+\`\`\` Dependencies+= yargs@1 \`\`\`
+\`\`\` Dependencies --append yargs@1 \`\`\`
 
 ## Other ideas: 
 

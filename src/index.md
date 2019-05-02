@@ -54,7 +54,7 @@ to disk. After the compiler is done, your program is ready.
 Markdown syntax:
 
 <pre>
-\`\`\`[type] [filename] [options]
+\`\`\`[type] \<\< [filename] \>\> [options]
     content for document here.
 \`\`\`
 </pre>
@@ -62,7 +62,7 @@ Please note: GFM Doesnt render the filename and options
 so i might want to change this. You may want to check the Raw source of this 
 document to get the full picture.
 
-```php examples/my-first-program.php
+```php << examples/my-first-program.php >>
 <?php
     echo "Hello world";
 ```
@@ -71,25 +71,26 @@ When you run the compiler, it will write this file to disk.
 
 Later on, we may add to this file, using the --append option:
 
-examples/my-first-program.php --append:
-```php examples/my-first-program.php --append
+```php << examples/my-first-program.php >>+=
     echo "This is added";
 ```
 
 You may focus on a specific block of code and use it in a file later on.
 
-#php-example-code:
-```php #php-example-code
+```php << #php-example-code >>
     for ($i=0;$i<10;$i++) {
         echo "Number $i\n";
     }
 ```
 
-Now we reuse it in our example file with the special code >>include [id]. To trigger this type of interpretted mode you need to add the --interpret option.
+Now we reuse it in our example file with the special code \<\< [id] \>\>. This
+is the default behaviour. To prevent the compiler from touching it, you may
+supply `--dont-interpret`
 
-examples/my-first-program.php --append --interpret:
-```php examples/my-first-program.php --append --interpret
->>include #php-example-code
+```php << examples/my-first-program.php >>+= 
+
+<<#php-example-code>>
+
 ```
 
 ## implementing the walkthrough compiler:
@@ -101,7 +102,7 @@ from terminal. It will receive an file (entrypoint) as argument.
 It may also receive a directory to output in.
 
 #main-arguments:
-```js #main-arguments
+```js << #main-arguments >>
     var argv = require('yargs')
         .option('output', {
             alias: 'o',
@@ -111,12 +112,16 @@ It may also receive a directory to output in.
             alias: 'v',
             describe: 'More verbose output'
         })
+        .option('debug', {
+            describe: 'Output full context'
+        })
         .argv
 
     
     var source_file = argv._[0];    
 
     VERBOSE = argv.verbose;
+    DEBUG = argv.debug;
 
     if (!source_file) {
         throw new Error('Please supply a source file as argument');
@@ -159,23 +164,42 @@ backup.
     system("mkdir -p '$output_directory';");
     */
 ```
-
-It will:
-- read the file
-- extract the codeblocks (denoted with three backticks) 
-- process the codeblocks
-- export the codeblocks to filesystem.
-
 #main --interpret:
-```js #main --interpret
+
+```js << #main >>
 const path = require('path');
 const mkdirp = require('mkdirp');
 
 let VERBOSE = false;
+let DEBUG = false;
 
 async function main() {
-    >>include #main-arguments
+    << #main-arguments >>
 
+    << #Collect / extract blocks from given file >>
+
+    << #Render the collected blocks to files >>
+    
+    << #Write the files to disk >>
+}
+```
+
+## Extracting
+Extracting blocks is pretty straight forward.
+Look for \`\`\`-blocks. This codeblock start may denote its 
+syntax type (\`\`\`php for instance, to denote php syntax)
+This is needed for IDE's to allow syntax highlighting inside the code block.
+Next up, we need to instruct the compiler on where to put the file.
+This is achieved by writing the filename on the same line as the codeblock starts.
+It's also possible to give blocks an id, which can be referenced
+later on. You should also be able to supply some processing instructions, for appending,
+prepending.
+
+Inside the main process we need to start collecting all the blocks
+from the given file. This needs to happen sequentially, because 
+we can only start rendering after we have collected all the blocks.
+
+```js << #Collect / extract blocks from given file >>
     // Step one: extract
     var context = {};
 
@@ -201,56 +225,11 @@ async function main() {
     if (VERBOSE) {
         console.info('Done reading blocks, we currently have: ' +"\n - " + Object.keys(context).join("\n - "));
     }
-    // Step two: Render/interpret 
-    var renderedFiles = {};
-    Object.keys(context).map(blockId => {
-        var renderedContent = render(context[blockId], context);
-        renderedFiles[blockId] = {
-            options: blockOptions[blockId],
-            content: renderedContent,
-        };
-    })
 
-    // Step three: Write to disk.
-    Object.keys(renderedFiles).map(fileId => {
-        var file = renderedFiles[fileId];
-
-        if (fileId.substr(0,1) === '#') {
-            // skip block ids.
-            return;
-        }
-
-        var output_file = path.join(output_directory, fileId);
-
-        try { 
-            mkdirp.sync(path.dirname(output_file));
-        } catch (ignore) {
-            // this may fail, if the directory already exists for instance.
-        }
-
-        fs.writeFile(output_file, file.content, err => {
-            if (err) {
-                console.error(`Unable to write ${output_file}: ${err}`);
-            } else {
-                console.log(`Written ${output_file}`);
-            }
-
-            >>include #additional-file-operations
-        });
-    })
-}
+    if (DEBUG) {
+        console.info('[debug] context: ' + JSON.stringify(context, null, 3));
+    }
 ```
-
-## Extracting
-Extracting blocks is pretty straight forward.
-Look for \`\`\`-blocks. This codeblock start may denote its 
-syntax type (\`\`\`php for instance, to denote php syntax)
-This is needed for IDE's to allow syntax highlighting inside the code block.
-Next up, we need to instruct the compiler on where to put the file.
-This is achieved by writing the filename on the same line as the codeblock starts.
-It's also possible to give blocks an id, which can be referenced
-later on. You should also be able to supply some processing instructions, for appending,
-prepending and interpretted mode.
 
 #extract_blocks:
 ```js #extract_blocks --interpret
@@ -260,8 +239,10 @@ var readline = require('readline');
 var EventEmitter = require('events');
 var blockOptionsParser = require('yargs')
     .option('interpret', {
-        alias: 'i',
+        alias: 'i'
     })
+    .option('already-merged')
+    .option('dont-include')
     .option('prepend', { alias: 'p'})
     .option('append', { alias: 'a'})
 ;
@@ -272,7 +253,7 @@ function extract_blocks(file, options) {
     var promises = [];
     var emitter = new EventEmitter();
 
-    >>include #extract_blocks_prevent_double_processing
+    << #extract_blocks_prevent_double_processing >>
 
     var rl = readline.createInterface({
         input: fs.createReadStream(file),
@@ -286,11 +267,16 @@ function extract_blocks(file, options) {
             if (line.substr(0, 3) === '```') {
                 rl.removeListener('line', captureBlock);
                 var header = parseBlockHeader(startLine);
-                header.file = file;
-                emitter.emit('block', {
-                    block_header: header,
-                    block_content: lines
-                });
+
+                var skipBlock = header.options['dont-include'] || header.options['already-merged'];
+
+                if (!skipBlock && header) {
+                    header.file = file;
+                    emitter.emit('block', {
+                        block_header: header,
+                        block_content: lines
+                    });
+                }
                 rl.on('line', awaitBlock);
             } else {
                 lines.push(line);
@@ -306,7 +292,7 @@ function extract_blocks(file, options) {
             return;
         }
 
-        >>include #extract_blocks_parser_extensions
+        << #extract_blocks_parser_extensions >>
     }
 
     var res = rl.on('line', awaitBlock);
@@ -323,16 +309,30 @@ function extract_blocks(file, options) {
 // Parse block header:
 // convert ```[type] [filename] [options?].
 function parseBlockHeader(startLine) {
-    var [tmp, options] = startLine.split(/\s-/);
+    // Split options
+    var [tmp, options] = startLine.replace(/\s+/g, ' ').split(/\s-/);
+    var pieces;
+    var id;
+    var noWebMatch = tmp.match(/<<\s*(.+?)\s*(,.+?)*\s*>>\s*(\+?=?)*/);
 
-    var pieces = tmp.split(/\s+/);
-
-    var id = pieces.pop(); 
     if (options) {
         options = blockOptionsParser
             .parse(`-${options}`.split(/\s+/));
     } else {
         options = {}
+    }
+
+    options.interpret = options.interpret || !options['dont-interpret'];
+
+    if (noWebMatch) {
+        id = noWebMatch[1];
+
+        if (noWebMatch[3] === '+=') {
+            options.append = true;
+        }
+    } else {
+        pieces = tmp.split(/\s+/);
+        id = pieces.pop(); 
     }
 
     return {
@@ -343,13 +343,13 @@ function parseBlockHeader(startLine) {
 
 ```
 
+
 ## The rendering process
 Some blocks just put out content for a given file, like the 
 example file above. Besides this, we also want to support 
 special operations, for instance, appending to a file, like so:
 
-examples/example-file.txt --append:
-```text examples/example-file.txt --append
+```text << examples/example-file.txt >>+=
 These lines will be appended to the file.
 ```
 
@@ -357,22 +357,23 @@ Besides direct output to files, we want named blocks for later
 use (or reuse), like so:
 
 #example-block:
-```test #example-block
+```test << #example-block >>
 This is an example block and wont be exported to filesystem.
 But, we can reference it later.
 ```
 
 To (re)use defined blocks, we need to have some syntax. This
-is provided via the --interpreted (or -i) mode:
+is done by the interpret function. This is default behaviour 
 
-examples/dynamic-example.txt --interpret:
-```test examples/dynamic-example.txt --interpret
+```test << examples/dynamic-example.txt >>
 Inside this file we may use special syntax to include blocks:
->>include #example-block
+<< #example-block >>
 
 It's also possible to import the example file:
->>include examples/example-file.txt
+<< examples/example-file.txt >>
 ```
+
+@todo - prevent infinite loops
 
 #render:
 ```js #render --interpret
@@ -407,21 +408,75 @@ function render(block, context) {
 }
 
 function interpret(content, context) {
-    content = content
-        // \>\>include block
-        .replace(/(\n\s*)>>include\s+(.+)/g, (match, space, includeId) => {
-            if (!(includeId in context)) {
-                throw new Error(includeId + ' not found');
-            }
-            return (space||'') + render(context[includeId], context);
-        })
-        
-    ;
+    // Ability to parse \<\< Chunkname \>\> references.
+    content = content.replace(/(^|(\n\s*))<<\s*(.+?)\s*>>/g, (match, space, spaceBound, includeId) => {
+        // When a block cannot be found, just print a notice.
+        if (!(includeId in context)) {
+            console.log('[notice]: `' + includeId + ' not found');
+            return '';
+        }
+        return (space||'') + render(context[includeId], context);
+    });
 
-    >>include #extra-interpreter-stuff
+    << #extra-interpreter-stuff >>
 
     return content;
 }
+```
+
+Now we have the per-file rendering in place, we still need
+to render all our collected blocks. 
+
+```js << #Render the collected blocks to files >>
+    // Step two: Render/interpret 
+    var renderedFiles = {};
+    Object.keys(context).map(blockId => {
+        var renderedContent = render(context[blockId], context);
+        renderedFiles[blockId] = {
+            options: blockOptions[blockId],
+            content: renderedContent,
+        };
+    })
+
+    if (DEBUG) {
+        console.info('[debug] rendered files: ' + JSON.stringify(renderedFiles, null, 3));
+    }
+```
+
+## Writing it all
+The rendered files now need to be written to disk.
+This is fairly straigh forward. 
+We'll only skip writing blocks that start with #.
+
+```js << #Write the files to disk >>
+
+    // Step three: Write to disk.
+    Object.keys(renderedFiles).map(fileId => {
+        var file = renderedFiles[fileId];
+
+        if (fileId.substr(0,1) === '#') {
+            // skip block ids.
+            return;
+        }
+
+        var output_file = path.join(output_directory, fileId);
+
+        try { 
+            mkdirp.sync(path.dirname(output_file));
+        } catch (ignore) {
+            // this may fail, if the directory already exists for instance.
+        }
+
+        fs.writeFile(output_file, file.content, err => {
+            if (err) {
+                console.error(`Unable to write ${output_file}: ${err}`);
+            } else {
+                console.log(`Written ${output_file}`);
+            }
+
+            << #Additional file operations >>
+        });
+    })
 ```
 
 Now, to make a program that will actually run, I'll create a php file 
@@ -429,12 +484,11 @@ and insert my codeblocks in the proper order (as php doesn't do function hoistin
 When this script is called, it will immediately run main and pass it the argv (command arguments).
 You can find this in /build/extractor.php
 
-extractor.js --interpret
-```js extractor.js --interpret
+```js << extractor.js >>
 
->>include #main
->>include #extract_blocks
->>include #render
+<< #main >>
+<< #extract_blocks >>
+<< #render >>
 
 main()
 
@@ -445,12 +499,9 @@ Q.E.D.
 
 
 
-
 ## Advanced options:
 
 - [Advanced subjects](advanced-subjects.md)
-- [Advanced subjects](advanced-subjects.md)
-
 
 Now run:
 `./build/bin/wlkc src/index.md -o build` to compile this document to a walkthrough compiler.

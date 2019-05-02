@@ -25,24 +25,31 @@ It did inspire me to change the `>>include` syntax to noweb style:
 
     <<Chunk name reference>>
 
-```js #extra-interpreter-stuff
+```js << #extra-interpreter-stuff >> --already-merged
     // Ability to parse \<\< Chunkname \>\> references.
-    content = content.replace(/(^|(\n\s*))<<\s*(.+)\s*>>/g, (match, space, spaceBound, includeId) => {
-        includeId = includeId.trim();
-
+    content = content.replace(/(^|(\n\s*))<<\s*(.+?)\s*>>/g, (match, space, spaceBound, includeId) => {
         if (!(includeId in context)) {
             throw new Error(includeId + ' not found');
         }
+
         return (space||'') + render(context[includeId], context);
     });
 ```
 
-```text #sample-text
+An added bonus is that block ids may now contain spaces.
+
+And this is what one may do with it:
+```text << #sample-text >>
 This is a sample text
 ```
 
-```text examples/noweb-references.txt --interpret
+```text << examples/noweb-references.txt >>
 <<#sample-text>>
 
 << #sample-text >>
 ```
+
+Full noweb style: 
+noweb also supports syntax like: \<\<Chunk\>\>= , \<\< Chunk \>\> += , but this
+doesn't play well with markdown syntax, so i'll keep it this way.
+

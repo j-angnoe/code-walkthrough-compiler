@@ -2,15 +2,29 @@
 const path = require('path');
 const mkdirp = require('mkdirp');
 
+let VERBOSE = false;
+let DEBUG = false;
+
 async function main() {
         var argv = require('yargs')
         .option('output', {
             alias: 'o',
             describe: 'directory to output to'
         })
+        .option('verbose', {
+            alias: 'v',
+            describe: 'More verbose output'
+        })
+        .option('debug', {
+            describe: 'Output full context'
+        })
         .argv
 
+    
     var source_file = argv._[0];    
+
+    VERBOSE = argv.verbose;
+    DEBUG = argv.debug;
 
     if (!source_file) {
         throw new Error('Please supply a source file as argument');
@@ -21,7 +35,7 @@ async function main() {
     console.log("Reading file " + source_file);
 
 
-    // Step one: extract
+        // Step one: extract
     var context = {};
 
     var blockOptions = {};
@@ -29,6 +43,9 @@ async function main() {
     var blocks = (await (new Promise(resolve => {
         block_stream = extract_blocks(source_file, {followLinks: true});
         block_stream.on('block', block => {
+            if (VERBOSE) {
+                console.info('Block defined: ' + block.block_header.id + ' in file: ' + block.block_header.file);
+            }
             context[block.block_header.id] = context[block.block_header.id] || [];
             context[block.block_header.id].push(block);
 
@@ -39,6 +56,16 @@ async function main() {
         block_stream.on('close', resolve);
     })));
     
+
+    if (VERBOSE) {
+        console.info('Done reading blocks, we currently have: ' +"\n - " + Object.keys(context).join("\n - "));
+    }
+
+    if (DEBUG) {
+        console.info('[debug] context: ' + JSON.stringify(context, null, 3));
+    }
+
+
     // Step two: Render/interpret 
     var renderedFiles = {};
     Object.keys(context).map(blockId => {
@@ -49,6 +76,12 @@ async function main() {
         };
     })
 
+    if (DEBUG) {
+        console.info('[debug] rendered files: ' + JSON.stringify(renderedFiles, null, 3));
+    }
+
+    
+    
     // Step three: Write to disk.
     Object.keys(renderedFiles).map(fileId => {
         var file = renderedFiles[fileId];
@@ -83,6 +116,7 @@ async function main() {
 
         });
     })
+
 }
 
 
@@ -92,6 +126,7 @@ var EventEmitter = require('events');
 var blockOptionsParser = require('yargs')
     .option('interpret', {
         alias: 'i',
+        default: true
     })
     .option('prepend', { alias: 'p'})
     .option('append', { alias: 'a'})
@@ -103,7 +138,7 @@ function extract_blocks(file, options) {
     var promises = [];
     var emitter = new EventEmitter();
 
-    extract_blocks.processedFiles = extract_blocks.processedFiles || [];
+        extract_blocks.processedFiles = extract_blocks.processedFiles || [];
     if (extract_blocks.processedFiles.indexOf(file) >= 0) {
         setTimeout(() => {
             console.log('File was already processed.');
@@ -125,8 +160,10 @@ function extract_blocks(file, options) {
         var captureBlock = line => {
             if (line.substr(0, 3) === '```') {
                 rl.removeListener('line', captureBlock);
+                var header = parseBlockHeader(startLine);
+                header.file = file;
                 emitter.emit('block', {
-                    block_header: parseBlockHeader(startLine),
+                    block_header: header,
                     block_content: lines
                 });
                 rl.on('line', awaitBlock);
@@ -152,12 +189,12 @@ function extract_blocks(file, options) {
     // other lines: Parse links
     var linkMatch = line.match(linkRegex);
     
-    if (linkMatch) {
+    if (followLinks && linkMatch) {
         var isMarkdownImage = linkMatch[1] === "!";
+        var linkUrl = linkMatch[3];
+        var isAbsoluteUrl = linkUrl.indexOf('://') > 0;
 
-        if (followLinks && !isMarkdownImage) {
-            var linkUrl = linkMatch[3];
-
+        if (!isAbsoluteUrl && !isMarkdownImage) {
             console.log('Following link ' + linkUrl);
 
             var sub_file = path.join(path.dirname(file), linkUrl);
@@ -191,16 +228,30 @@ function extract_blocks(file, options) {
 // Parse block header:
 // convert ```[type] [filename] [options?].
 function parseBlockHeader(startLine) {
-    var [tmp, options] = startLine.split(/\s-/);
+    // Split options
+    var [tmp, options] = startLine.replace(/\s+/g, ' ').split(/\s-/);
+    var pieces;
+    var id;
+    var noWebMatch = tmp.match(/<<\s*(.+?)\s*(,.+?)*\s*>>\s*(\+?=?)*/);
 
-    var pieces = tmp.split(/\s+/);
-
-    var id = pieces.pop(); 
     if (options) {
         options = blockOptionsParser
             .parse(`-${options}`.split(/\s+/));
     } else {
         options = {}
+    }
+
+    options.interpret = options.interpret || !options['dont-interpret'];
+
+    if (noWebMatch) {
+        id = noWebMatch[1];
+
+        if (noWebMatch[3] === '+=') {
+            options.append = true;
+        }
+    } else {
+        pieces = tmp.split(/\s+/);
+        id = pieces.pop(); 
     }
 
     return {
@@ -221,7 +272,11 @@ function render(block, context) {
         var opts = b.block_header.options || {};
 
         if (opts.interpret) {
-            content = interpret(content, context);
+            try {
+                content = interpret(content, context);
+            } catch (err) {
+                console.error(err);
+            }
         }
 
         if (opts.prepend) {
@@ -237,12 +292,28 @@ function render(block, context) {
 }
 
 function interpret(content, context) {
-    return content.replace(/(\n\s*)>>include\s+(.+)/g, (match, space, includeId) => {
+    content = content
+        // \>\>include block
+        .replace(/(\n\s*)>>include\s+(.+)/g, (match, space, includeId) => {
+            if (!(includeId in context)) {
+                throw new Error(includeId + ' not found');
+            }
+            return (space||'') + render(context[includeId], context);
+        })
+        
+    ;
+
+        // Ability to parse \<\< Chunkname \>\> references.
+    content = content.replace(/(^|(\n\s*))<<\s*(.+?)\s*>>/g, (match, space, spaceBound, includeId) => {
         if (!(includeId in context)) {
             throw new Error(includeId + ' not found');
         }
-        return space + render(context[includeId], context);
+
+        return (space||'') + render(context[includeId], context);
     });
+
+
+    return content;
 }
 
 
