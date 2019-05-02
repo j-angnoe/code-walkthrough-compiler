@@ -170,14 +170,16 @@ function extract_blocks(file, options) {
                 rl.removeListener('line', captureBlock);
                 var header = parseBlockHeader(startLine, lines);
 
-                var skipBlock = header.options['dont-include'] || header.options['already-merged'];
+                if (header) {
+                    var skipBlock = header.options['dont-include'] || header.options['already-merged'];
 
-                if (!skipBlock && header) {
-                    header.file = file;
-                    emitter.emit('block', {
-                        block_header: header,
-                        block_content: lines
-                    });
+                    if (!skipBlock) {
+                        header.file = file;
+                        emitter.emit('block', {
+                            block_header: header,
+                            block_content: lines
+                        });
+                    }
                 }
                 rl.on('line', awaitBlock);
             } else {
@@ -281,6 +283,14 @@ function parseBlockHeader(startLine, lines) {
     } else {
         pieces = tmp.split(/\s+/);
         id = pieces.pop(); 
+
+        if (id.match(/^`{3}/)) {
+            return false;
+        }
+    }
+
+    if (!id) {
+        return false;
     }
 
     return {

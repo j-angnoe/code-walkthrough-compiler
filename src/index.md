@@ -14,7 +14,7 @@ compile the walkthrough compiler from it :-).
 There's actually a name for this, it's called Literate programming,
 I'll expand on the literate programming in [this document](on-literate-programming.md)
 
-For mobile users: Go here to see the [full text](src/index.md)
+For mobile users: Go here to see the <a href="src/index.md">full text</a>
 
 ## Why
 Code is perfect for instructing computers but a less ideal medium for transmitting
@@ -269,14 +269,16 @@ function extract_blocks(file, options) {
                 rl.removeListener('line', captureBlock);
                 var header = parseBlockHeader(startLine, lines);
 
-                var skipBlock = header.options['dont-include'] || header.options['already-merged'];
+                if (header) {
+                    var skipBlock = header.options['dont-include'] || header.options['already-merged'];
 
-                if (!skipBlock && header) {
-                    header.file = file;
-                    emitter.emit('block', {
-                        block_header: header,
-                        block_content: lines
-                    });
+                    if (!skipBlock) {
+                        header.file = file;
+                        emitter.emit('block', {
+                            block_header: header,
+                            block_content: lines
+                        });
+                    }
                 }
                 rl.on('line', awaitBlock);
             } else {
@@ -337,6 +339,14 @@ function parseBlockHeader(startLine, lines) {
     } else {
         pieces = tmp.split(/\s+/);
         id = pieces.pop(); 
+
+        if (id.match(/^`{3}/)) {
+            return false;
+        }
+    }
+
+    if (!id) {
+        return false;
     }
 
     return {

@@ -4,8 +4,7 @@
   "description": "A experimental compiler that compiles walkthrough documentation to working programs",
   "main": "build/bin/wlkc",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "./bin/wlkc src/index.md"
+    "build": "./build/bin/wlkc src/index.md -o build"
   },
   "files": [
     "build"
