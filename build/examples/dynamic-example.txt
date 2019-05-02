@@ -3,11 +3,6 @@ This is an example block and wont be exported to filesystem.
 But, we can reference it later.
 
 
-
 It's also possible to import the example file:
-This will be exported to /build/example/example-file.txt
-
 These lines will be appended to the file.
-
-
 

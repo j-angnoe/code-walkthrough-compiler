@@ -11,21 +11,25 @@ This document you are currently reading  contains the entire source for
 the walkthrough compiler, i'm telling the story, and the compiler will 
 compile the walkthrough compiler from it :-).
 
+There's actually a name for this, it's called Literate programming,
+I'll expand on the literate programming in [this document](on-literate-programming.md)
+
+
 ## Why
 Code is perfect for instructing computers but a less ideal medium for transmitting
 knowledge, in my experience. I think a compelling story is more effective for
 transmitting key ideas and subtle considerations that just seeing the code (especially code
 without comments). Our future selves and future collegues will thank us. 
 
-Why PHP: No real reason. I'm fairly comfortable with php. But. This being a 
+Why Javascript: No real reason. I'm fairly comfortable with javascript. But. This being a 
 narrative on how to write a walkthrough compiler it's fairly straigh forward to 
 port this to any language, one of the benefits of this form of writing a program i guess.
 
 ## Installation
 Via repo:
-- Requirements: php 7, linux (posix) (this may be improved)
+- Requirements: node (8+), npm
 - Clone this repository
-- run `npm link` or create a symlink `ln -s ./bin/wlkc /usr/local/bin/wlkc` to make wlkc available
+- run `npm link` or create a symlink `ln -s ./build/bin/wlkc /usr/local/bin/wlkc` to make wlkc available
   on your system.
 - See that it works.
 
@@ -94,11 +98,33 @@ examples/my-first-program.php --append --interpret:
 
 Step one: The standalone compiler. It will be a program executed
 from terminal. It will receive an file (entrypoint) as argument.
+It may also receive a directory to output in.
 
-#main-read-file-argument:
-```php #main-read-file-argument
-    // read the file
-    $file = realpath($argv[1]);
+#main-arguments:
+```js #main-arguments
+    var argv = require('yargs')
+        .option('output', {
+            alias: 'o',
+            describe: 'directory to output to'
+        })
+        .option('verbose', {
+            alias: 'v',
+            describe: 'More verbose output'
+        })
+        .argv
+
+    
+    var source_file = argv._[0];    
+
+    VERBOSE = argv.verbose;
+
+    if (!source_file) {
+        throw new Error('Please supply a source file as argument');
+    }
+    
+    var output_directory = argv.output || path.join(path.dirname(source_file), 'build');
+
+    console.log("Reading file " + source_file);
 ```
 
 Before moving on we need to do some validation and cleanup.
@@ -109,7 +135,11 @@ versions of the compiler I move the previously built directory to
 backup.
 
 #main-setup:
-```php #main-setup 
+```js #main-setup 
+
+    // @todo - clear out build directory.
+
+    /* 
     // set up some paths
     $source_directory = dirname($file);
 
@@ -127,6 +157,7 @@ backup.
     $date = date('Y-m-d-his');
     system("mv '$output_directory' '$backup_directory/$date'");
     system("mkdir -p '$output_directory';");
+    */
 ```
 
 It will:
@@ -136,43 +167,77 @@ It will:
 - export the codeblocks to filesystem.
 
 #main --interpret:
-```php #main --interpret
-function main($argv) {
+```js #main --interpret
+const path = require('path');
+const mkdirp = require('mkdirp');
 
-    >>include #main-read-file-argument
-    >>include #main-setup 
+let VERBOSE = false;
+
+async function main() {
+    >>include #main-arguments
+
+    // Step one: extract
+    var context = {};
+
+    var blockOptions = {};
+
+    var blocks = (await (new Promise(resolve => {
+        block_stream = extract_blocks(source_file, {followLinks: true});
+        block_stream.on('block', block => {
+            if (VERBOSE) {
+                console.info('Block defined: ' + block.block_header.id + ' in file: ' + block.block_header.file);
+            }
+            context[block.block_header.id] = context[block.block_header.id] || [];
+            context[block.block_header.id].push(block);
+
+            // capture all block meta information
+            blockOptions[block.block_header.id] = blockOptions[block.block_header.id] || {};
+            Object.assign(blockOptions[block.block_header.id], block.block_header.options);
+        });
+        block_stream.on('close', resolve);
+    })));
     
-    $current_output_file = false;
 
-    // extract all the blocks from the file
-
-    // pass 1: Collect all blocks, group them by id.
-    $context = [];
-    foreach (extract_blocks($file) as $b) {
-        $context[$b['block_header']['id']][] = $b;
+    if (VERBOSE) {
+        console.info('Done reading blocks, we currently have: ' +"\n - " + Object.keys(context).join("\n - "));
     }
+    // Step two: Render/interpret 
+    var renderedFiles = {};
+    Object.keys(context).map(blockId => {
+        var renderedContent = render(context[blockId], context);
+        renderedFiles[blockId] = {
+            options: blockOptions[blockId],
+            content: renderedContent,
+        };
+    })
 
-    // pass 2: Render each block
-    $rendered = [];
-    foreach ($context as $id => $block) {
-        $rendered[$id] = render($block, $context);
-    }
+    // Step three: Write to disk.
+    Object.keys(renderedFiles).map(fileId => {
+        var file = renderedFiles[fileId];
 
-    // export
-    foreach ($rendered as $name => $content) {
-        // skip blocks that start with a #
-        if ($name{0} === '#') {
-            continue;
+        if (fileId.substr(0,1) === '#') {
+            // skip block ids.
+            return;
         }
 
-        $file = "$output_directory/$name";
-        $dir = dirname($file);
-        system("mkdir -p '$dir'");
+        var output_file = path.join(output_directory, fileId);
 
-        file_put_contents($file, $content);
+        try { 
+            mkdirp.sync(path.dirname(output_file));
+        } catch (ignore) {
+            // this may fail, if the directory already exists for instance.
+        }
 
-        echo "Written $file\n";
-    }
+        fs.writeFile(output_file, file.content, err => {
+            if (err) {
+                console.error(`Unable to write ${output_file}: ${err}`);
+            } else {
+                console.log(`Written ${output_file}`);
+            }
+
+            >>include #additional-file-operations
+        });
+    })
 }
 ```
 
@@ -188,58 +253,94 @@ later on. You should also be able to supply some processing instructions, for ap
 prepending and interpretted mode.
 
 #extract_blocks:
-```php #extract_blocks
-function extract_blocks($file) {
-    $fh = fopen($file, 'r');
-    while (false !== ($line = fgets($fh))) {
+```js #extract_blocks --interpret
 
-        if (substr(ltrim($line), 0, 3) === '```') {
-            // Block starts:
+var fs = require('fs');
+var readline = require('readline');
+var EventEmitter = require('events');
+var blockOptionsParser = require('yargs')
+    .option('interpret', {
+        alias: 'i',
+    })
+    .option('prepend', { alias: 'p'})
+    .option('append', { alias: 'a'})
+;
 
-            $header = substr(trim($line), 3);
+function extract_blocks(file, options) {
+    var {followLinks} = options || {};
+    
+    var promises = [];
+    var emitter = new EventEmitter();
 
-            // Parse the codeblock line for filename and options, format:
-            // ```[markdown-syntax] [filename] [--option --option?]
-            if (preg_match('/(?<type>[a-z]+\s)?(?<file>(#[a-z_-]+|.+\.[a-z]+))(\s+(?<options>-.+))?/i', $header, $match)) {
-                //print_r($match);
+    >>include #extract_blocks_prevent_double_processing
 
-                $optString = explode(' ', $match['options'] ?? '');
-                $hasOpt = function ($a, $b) use ($optString) {
-                    return in_array($a, $optString) || ($b && in_array($b, $optString));
-                };
+    var rl = readline.createInterface({
+        input: fs.createReadStream(file),
+        output: process.stdout,
+        terminal: false
+    });
 
-                $options = [];
-                $options['interpret'] = $hasOpt('-i', '--interpret');
-                $options['append'] = $hasOpt('-a', '--append');
-                $options['prepend'] = $hasOpt('-p', '--prepend');
-
-                $header = [
-                    'id' => $match['file'],
-                    'options' => $options
-                ];
+    var startCapture = startLine => {        
+        var lines = [];
+        var captureBlock = line => {
+            if (line.substr(0, 3) === '```') {
+                rl.removeListener('line', captureBlock);
+                var header = parseBlockHeader(startLine);
+                header.file = file;
+                emitter.emit('block', {
+                    block_header: header,
+                    block_content: lines
+                });
+                rl.on('line', awaitBlock);
+            } else {
+                lines.push(line);
             }
+        };
+        rl.on('line', captureBlock);
+    }
 
-            $content = '';
-            while(false !== ($line = fgets($fh))) {
-                // Read block content
-                if (substr(ltrim($line), 0, 3) === '```') {
-                    break;
-                }
-                $content .= $line;
-            }
-
-            yield [
-                'block_header' => $header,
-                'block_content' => $content,
-                'source_file' => $file
-            ];
-
-            continue;
+    var awaitBlock = line => {
+        if (line.substr(0, 3) === '```') {
+            rl.removeListener('line', awaitBlock);
+            startCapture(line);
+            return;
         }
 
-        // room for parse link.
+        >>include #extract_blocks_parser_extensions
+    }
+
+    var res = rl.on('line', awaitBlock);
+
+    rl.on('close', event => {
+        Promise.all(promises).then(done => {
+            emitter.emit('close');
+        })
+    });    
+
+    return emitter;   
+}
+
+// Parse block header:
+// convert ```[type] [filename] [options?].
+function parseBlockHeader(startLine) {
+    var [tmp, options] = startLine.split(/\s-/);
+
+    var pieces = tmp.split(/\s+/);
+
+    var id = pieces.pop(); 
+    if (options) {
+        options = blockOptionsParser
+            .parse(`-${options}`.split(/\s+/));
+    } else {
+        options = {}
+    }
+
+    return {
+        id,
+        options
     }
 }
+
 ```
 
 ## The rendering process
@@ -274,41 +375,52 @@ It's also possible to import the example file:
 ```
 
 #render:
-```php #render
-function render($block, &$context) {
-    $prepend = '';
-    $append = '';
-    $final = '';
+```js #render --interpret
 
-    foreach ($block as $b) {
-        $content = $b['block_content'];
-        $opts = $b['block_header']['options'] ?? [];
+function render(block, context) {
+    var prepend = '';
+    var append = '';
+    var final = '';
 
-        if ($opts['interpret'] ?? false) {
-            $content = interpret($content, $context);
+    block.map(b => {
+        var content = b.block_content.join("\n");
+        var opts = b.block_header.options || {};
+
+        if (opts.interpret) {
+            try {
+                content = interpret(content, context);
+            } catch (err) {
+                console.error(err);
+            }
         }
 
-        if ($opts['prepend'] ?? false) {
-            $prepend .= $content . PHP_EOL;
-        } elseif ($opts['append'] ?? false) {
-            $append .= $content . PHP_EOL;
+        if (opts.prepend) {
+            prepend += content + "\n";
+        } else if (opts.append) {
+            append += content + "\n";
         } else {
-            $final .= $content . PHP_EOL;
+            final += content + "\n";
         }
-    }
-    return $prepend . $final . $append;
+    })
+
+    return prepend + final + append;
 }
 
-function interpret($content, &$context) {
-    // replace >>include directives with the real content.
-    return preg_replace_callback('/\s*>>include (.+)/', function($match) use (&$context) {
-        // echo "Interpretting {$match[0]}\n";
-        $includeId = trim($match[1]); // clear whitespace;
-        if (!isset($context[$includeId])) {
-            throw new Exception('Could not find >>include ' . $match[1]);
-        }
-        return PHP_EOL . render($context[trim($match[1])], $context);
-    }, $content);
+function interpret(content, context) {
+    content = content
+        // \>\>include block
+        .replace(/(\n\s*)>>include\s+(.+)/g, (match, space, includeId) => {
+            if (!(includeId in context)) {
+                throw new Error(includeId + ' not found');
+            }
+            return (space||'') + render(context[includeId], context);
+        })
+        
+    ;
+
+    >>include #extra-interpreter-stuff
+
+    return content;
 }
 ```
 
@@ -317,30 +429,36 @@ and insert my codeblocks in the proper order (as php doesn't do function hoistin
 When this script is called, it will immediately run main and pass it the argv (command arguments).
 You can find this in /build/extractor.php
 
-extractor.php --interpret
-```php extractor.php --interpret
-<?php
+extractor.js --interpret
+```js extractor.js --interpret
 
+>>include #main
 >>include #extract_blocks
 >>include #render
->>include #main
 
-main($argv);
+main()
+
 ```
- 
+
+
 Q.E.D.
 
-Now run:
-`php build/extractor.php src/index.md` to compile this document to a walkthrough compiler.
 
+
+
+## Advanced options:
+
+- [Advanced subjects](advanced-subjects.md)
+- [Advanced subjects](advanced-subjects.md)
+
+
+Now run:
+`./build/bin/wlkc src/index.md -o build` to compile this document to a walkthrough compiler.
 
 
 ## Room for improvement
 - Codeblock filename and options aren't rendered properly by Github Flavoured Markdown
   this should be changed. Maybe something like 
-- Currently only works on Linux (Mac maybe as well), because of the system() calls.
-- You'd want to use this on a terminal, by running wlkc [path/to/index.md]
-- Split large markdown documents into subdocuments, by following relative markdown links.
 - Include images / usable assets
 
 
