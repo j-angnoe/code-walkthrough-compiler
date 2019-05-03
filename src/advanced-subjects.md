@@ -132,3 +132,66 @@ Installation scripts and such.
 - Benchmark.
 - Profiling.
 - (Unit) testing.
+
+
+## Run actions from the document
+When building a walkthrough, you might want to be able 
+to run certain stuff.
+
+This is why we add the --action or -x action, which allows us to do:
+
+`wlkc some-file.md --action block-name`
+
+To make it easier for users, you dont have to write a block-name will resolve
+both block-name and #block-name.
+
+```js \
+// << #More program actions >>+=
+    .option('action', {
+        alias: 'x',
+        description: 'Immediately run a block'
+    })
+```
+
+To make this happen, we just need to interpret 
+the file as a bash script and immediately execute this
+after compilation of files is finished.
+
+
+Here is a naive implementation for it:
+
+```js \
+// << #Post compile operations >>
+
+if (argv.action) {
+    console.log("Perform action " + argv.action);
+
+    var action = argv.action;
+
+    if (`#${action}` in renderedFiles) {
+        var actionFile = renderedFiles[`#${action}`]
+    } else {
+        actionFile = renderedFiles[action];
+    }
+
+    console.log(actionFile);
+
+    if (actionFile) {
+        // @todo - improve this: make this async.
+        fs.writeFileSync(`${output_directory}/tmp.sh`, actionFile.content);
+
+        var spawn = require('child_process').spawn;
+
+        // @todo - improve this: would be best if we did not have to write 
+        //         a temporary file. 
+
+        spawn('bash', ['tmp.sh'], {
+            stdio: 'inherit',
+            cwd: output_directory
+        });
+    }
+}
+```
+
+This feature also asks for even more advanced features, like being able
+to recompile stuff when the source document (and/or subdocuments) change.

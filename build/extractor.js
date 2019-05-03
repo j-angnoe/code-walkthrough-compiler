@@ -20,6 +20,11 @@ async function main() {
         .option('debug', {
             describe: 'Output full context'
         })
+            .option('action', {
+        alias: 'x',
+        description: 'Immediately run a block'
+    })
+
         .argv
 
     
@@ -87,7 +92,7 @@ async function main() {
     
     
     // Step three: Write to disk.
-    Object.keys(renderedFiles).map(fileId => {
+    var promises = Object.keys(renderedFiles).map(fileId => {
         var file = renderedFiles[fileId];
 
         if (fileId.substr(0,1) === '#') {
@@ -103,14 +108,16 @@ async function main() {
             // this may fail, if the directory already exists for instance.
         }
 
-        fs.writeFile(output_file, file.content, err => {
-            if (err) {
-                console.error(`Unable to write ${output_file}: ${err}`);
-            } else {
-                console.log(`Written ${output_file}`);
-            }
-
-            
+        return new Promise((resolve, reject) => {
+            fs.writeFile(output_file, file.content, err => {
+                if (err) {
+                    console.error(`Unable to write ${output_file}: ${err}`);
+                    reject(err);
+                } else {
+                    console.log(`Written ${output_file}`);
+                }
+    
+                
 if (file.options.chmod) {
     var octalPermissions = parseInt(file.options.chmod, 8);
 
@@ -119,8 +126,43 @@ if (file.options.chmod) {
     require('fs').chmodSync(output_file, octalPermissions);
 }
 
+
+                resolve();
+            });
         });
     })
+
+
+    await Promise.all(promises);
+
+    console.log('Compilation done.');
+    
+if (argv.action) {
+    console.log("Perform action " + argv.action);
+
+    var action = argv.action;
+
+    if (`#${action}` in renderedFiles) {
+        var actionFile = renderedFiles[`#${action}`]
+    } else {
+        actionFile = renderedFiles[action];
+    }
+
+    console.log(actionFile);
+
+    if (actionFile) {
+        // @todo async...
+        fs.writeFileSync(`${output_directory}/tmp.sh`, actionFile.content);
+
+        var spawn = require('child_process').spawn;
+
+        spawn('bash', ['tmp.sh'], {
+            stdio: 'inherit',
+            cwd: output_directory
+        });
+
+    }
+}
 
 }
 

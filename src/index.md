@@ -112,6 +112,7 @@ It may also receive a directory to output in.
         .option('debug', {
             describe: 'Output full context'
         })
+        << #More program actions >>
         .argv
 
     
@@ -179,6 +180,11 @@ async function main() {
     << #Render the collected blocks to files >>
     
     << #Write the files to disk >>
+
+    await Promise.all(promises);
+
+    console.log('Compilation done.');
+    << #Post compile operations >>
 }
 ```
 
@@ -472,7 +478,7 @@ We'll only skip writing blocks that start with #.
 // << #Write the files to disk >>=
 
     // Step three: Write to disk.
-    Object.keys(renderedFiles).map(fileId => {
+    var promises = Object.keys(renderedFiles).map(fileId => {
         var file = renderedFiles[fileId];
 
         if (fileId.substr(0,1) === '#') {
@@ -488,14 +494,19 @@ We'll only skip writing blocks that start with #.
             // this may fail, if the directory already exists for instance.
         }
 
-        fs.writeFile(output_file, file.content, err => {
-            if (err) {
-                console.error(`Unable to write ${output_file}: ${err}`);
-            } else {
-                console.log(`Written ${output_file}`);
-            }
+        return new Promise((resolve, reject) => {
+            fs.writeFile(output_file, file.content, err => {
+                if (err) {
+                    console.error(`Unable to write ${output_file}: ${err}`);
+                    reject(err);
+                } else {
+                    console.log(`Written ${output_file}`);
+                }
+    
+                << #Additional file operations >>
 
-            << #Additional file operations >>
+                resolve();
+            });
         });
     })
 ```
