@@ -5,7 +5,8 @@
   "main": "build/bin/wlkc",
   "scripts": {
     "build": "./build/bin/wlkc src/index.md -o build",
-    "build:next" : "./build/bin/wlkc src/index.md -o next"
+    "build:next" : "./build/bin/wlkc src/index.md -o next",
+    "wlkc" : "./build/bin/wlkc"
   },
   "files": [
     "build"

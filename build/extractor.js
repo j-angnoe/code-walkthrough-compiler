@@ -151,16 +151,18 @@ if (argv.action) {
     console.log(actionFile);
 
     if (actionFile) {
-        // @todo async...
+        // @todo - improve this: make this async.
         fs.writeFileSync(`${output_directory}/tmp.sh`, actionFile.content);
 
         var spawn = require('child_process').spawn;
+
+        // @todo - improve this: would be best if we did not have to write 
+        //         a temporary file. 
 
         spawn('bash', ['tmp.sh'], {
             stdio: 'inherit',
             cwd: output_directory
         });
-
     }
 }
 
@@ -181,6 +183,12 @@ var blockOptionsParser = require('yargs')
 ;
 
 function extract_blocks(file, options) {
+
+    // Assume we have file and fs and path.
+if (fs.statSync(file).isDirectory()) {
+    file = path.join(file, 'index.md');
+}
+
     var {followLinks} = options || {};
     
     var promises = [];

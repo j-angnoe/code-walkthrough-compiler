@@ -254,6 +254,8 @@ var blockOptionsParser = require('yargs')
 ;
 
 function extract_blocks(file, options) {
+
+    << #extract_blocks resolve appropriate file >>
     var {followLinks} = options || {};
     
     var promises = [];

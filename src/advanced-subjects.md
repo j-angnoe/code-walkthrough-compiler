@@ -195,3 +195,19 @@ if (argv.action) {
 
 This feature also asks for even more advanced features, like being able
 to recompile stuff when the source document (and/or subdocuments) change.
+
+
+## Which file to open:
+We want a file resolve heuristic which looks a bit like the nodejs require resolve heuristics. 
+
+wlkc somefile should either load:
+somefile/index.md
+somefile.md
+
+```js \
+<< #extract_blocks resolve appropriate file >>
+// Assume we have file and fs and path.
+if (fs.statSync(file).isDirectory()) {
+    file = path.join(file, 'index.md');
+}
+```
