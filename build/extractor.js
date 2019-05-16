@@ -194,10 +194,12 @@ var blockOptionsParser = require('yargs')
     .option('interpret', {
         alias: 'i'
     })
-    .option('already-merged')
-    .option('dont-include')
     .option('prepend', { alias: 'p'})
     .option('append', { alias: 'a'})
+
+    // Aliases to skip a block
+    .option('skip')
+    .alias('skip', ['already-merged', 'dont-include','exclude'])
 ;
 
 function extract_blocks(file, options) {
@@ -239,7 +241,7 @@ if (fs.statSync(file).isDirectory()) {
                 var header = parseBlockHeader(startLine, lines);
 
                 if (header) {
-                    var skipBlock = header.options['dont-include'] || header.options['already-merged'];
+                    var skipBlock = header.options.skip;
 
                     if (!skipBlock) {
                         header.file = file;

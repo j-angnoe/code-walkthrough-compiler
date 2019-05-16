@@ -75,4 +75,23 @@ And again:
 ```
 
 
+## Test 5
+skipping blocks
 
+You may denote some block to be skipped by adding --skip, --exclude, --dont-include
+or --already-merged
+
+```text file5-skipped.txt --skip
+This file should be skipped and will not appear in the end-result.
+```
+
+Try an alias of skip
+```text file5-skipped.txt --exclude
+This file should be skipped and will not appear in the end-result.
+```
+
+Try with WEB format
+
+```text << file5-skipped.txt >> --dont-include
+This file should be skipped and will not appear in the end-result.
+```
