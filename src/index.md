@@ -120,8 +120,6 @@ It may also receive a directory to output in.
     << #More program options >>
     
     var argv = yargs.argv
-
-    
     var source_file = argv._[0];    
 
     VERBOSE = argv.verbose;
@@ -131,6 +129,12 @@ It may also receive a directory to output in.
         throw new Error('Please supply a source file as argument');
     }
     
+    console.log("Working directory: %s", process.cwd());
+
+    if (fs.statSync(source_file).isDirectory()) {
+        source_file = path.join(source_file, 'index.md');
+    }
+
     var output_directory = argv.output || path.join(path.dirname(source_file), 'build');
 
     console.log("Reading file " + source_file);

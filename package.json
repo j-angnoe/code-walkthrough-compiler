@@ -6,7 +6,8 @@
   "scripts": {
     "build": "./build/bin/wlkc src/index.md -o build",
     "build:next": "./build/bin/wlkc src/index.md -o next",
-    "wlkc": "./build/bin/wlkc"
+    "wlkc": "./build/bin/wlkc",
+    "test" : "sh tests/run-all-tests.sh"
   },
   "files": [
     "build"
