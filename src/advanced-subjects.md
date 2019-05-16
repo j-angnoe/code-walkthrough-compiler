@@ -224,6 +224,8 @@ Usecases: Add some lines to some configuration file (for instance /etc/hosts). T
 Usecase: When you have a lot of files inside some deep path you may want to prevent repeating the long path a lot of times. This also allows you to be more flexible. So, a way to define a path constant and a mechanism for referencing these
 inside the paths.
 
+
+
 ## Source map support:
 
 Experiment
@@ -238,7 +240,7 @@ https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k/
 Step 1: Let the compiler also output a source map.
 
 ```js \
-<< tmp/tryout-source-maps.js >>
+<< tmp/tryout-source-maps.js >> --skip
 const SourceNode = require('source-map').SourceNode;
 
 var sn = new SourceNode(1,1,"myfile.js", [
@@ -251,6 +253,76 @@ console.log(map, map.map.toString());
 
 ```
 
-```action << #tryout-sourcemaps >>
+```action << #tryout-sourcemaps >> --skip
 node tmp/tryout-source-maps.js
 ```
+
+If we want to do this, the extract_blocks should export extra information,
+about source files and start/end linenumbers of chunks. The groundwork has
+been laid down...
+
+## Watcher option
+
+```js \
+<< #More program options >>
+yargs.option('watch', {
+    description: 'Watch source folder for changes'
+});
+```
+
+```js \
+<< extractor.js >>+=
+
+if (argv.watch) {
+    const fsmonitor = require('fsmonitor');
+
+    fsmonitor.watch(source_directory, null, change => {
+        console.log("...");
+        console.log("Detected a change...");
+
+        // Some throttling is a good thing.
+        clearTimeout(rerun.timeout);
+        rerun.timeout = setTimeout(rerun, 300);
+    })
+
+    var processIsRunning = false;
+
+
+
+    async function rerun() {
+        if (processIsRunning) {
+            console.log("Another process is still busy...");
+            return;
+        }
+        console.log("Recompiling...");
+        extract_blocks.processedFiles = [];
+
+        processIsRunning = true;
+
+        await main(argv);
+
+        processIsRunning = false;
+    }
+}
+```
+
+When running the compiler a lot of times:
+- processedFiles must be reset. (done)
+- We need to wait for a compile process to finish. (done)
+- We may want to do a cool-down, n number of recompiles every minute.
+
+A conflict: The run/action option including the watch..
+Some actions need to be performed as part of compiling/recompiling (like
+webpack/parcel actions). Other actions just need to be run once, like
+starting a webserver... A distinction must be made.
+
+
+
+
+
+
+
+
+
+
+

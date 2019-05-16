@@ -2,12 +2,12 @@
 
 const path = require('path');
 const mkdirp = require('mkdirp');
+const fs = require('fs');
 
 let VERBOSE = false;
 let DEBUG = false;
 
-async function main() {
-        var yargs = require('yargs');
+    var yargs = require('yargs');
 
     yargs.option('output', {
         alias: 'o',
@@ -22,10 +22,13 @@ async function main() {
         describe: 'Output full context'
     })
     yargs.option('dryrun', {
-        describe: 'Check results without modifying filesystem.'
+        describe: 'Generate results without modifying filesystem.'
     });
 
-        yargs.option('action', {
+    yargs.option('watch', {
+    description: 'Watch source folder for changes'
+});
+    yargs.option('action', {
         alias: 'x',
         description: 'Immediately run a block'
     });
@@ -40,17 +43,17 @@ async function main() {
     if (!source_file) {
         throw new Error('Please supply a source file as argument');
     }
-    
-    console.log("Working directory: %s", process.cwd());
 
     if (fs.statSync(source_file).isDirectory()) {
         source_file = path.join(source_file, 'index.md');
     }
-
-    var output_directory = argv.output || path.join(path.dirname(source_file), 'build');
+    var source_directory = path.dirname(source_file);
+    var output_directory = argv.output || path.join(source_directory, 'build');
 
     console.log("Reading file " + source_file);
+ 
 
+async function main(argv) {
 
     
     // Step one: extract
@@ -184,13 +187,13 @@ if (argv.action) {
     }
 }
 
+    
 }
 
 
-var fs = require('fs');
-var readline = require('readline');
-var EventEmitter = require('events');
-var blockOptionsParser = require('yargs')
+const readline = require('readline');
+const EventEmitter = require('events');
+const blockOptionsParser = require('yargs')
     .option('interpret', {
         alias: 'i'
     })
@@ -226,20 +229,40 @@ if (fs.statSync(file).isDirectory()) {
     extract_blocks.processedFiles.push(file);
 
 
-    var rl = readline.createInterface({
+    var _rl = readline.createInterface({
         input: fs.createReadStream(file),
         output: process.stdout,
         terminal: false
     });
 
-    var startCapture = startLine => {        
+    var rl = new EventEmitter();    
+
+    // We want to capture lines and linenumbers!
+    var lineNumber = 0;    
+    _rl.on('line', line => {
+        lineNumber++;
+        rl.emit('line', line, lineNumber);
+    })
+    _rl.on('close', event => {
+        rl.emit('close', event);
+    })
+
+
+    var startCapture = (startLine) => {        
         var lines = [];
-        var captureBlock = line => {
+        var startLineNumber = null;
+
+        var captureBlock = (line, currentLineNumber) => {
             var isBlockEnd = line.substr(0, 3) === '```';
+            
+            if (startLineNumber === null) {
+                startLineNumber = currentLineNumber;
+            }
+
             if (isBlockEnd) {
                 rl.removeListener('line', captureBlock);
                 var header = parseBlockHeader(startLine, lines);
-
+            
                 if (header) {
                     var skipBlock = header.options.skip;
 
@@ -247,6 +270,12 @@ if (fs.statSync(file).isDirectory()) {
                         header.file = file;
                         emitter.emit('block', {
                             block_header: header,
+                            block_meta: {
+                                source_file: file,
+                                // exclude start and end line.
+                                start_line_number: startLineNumber,
+                                end_line_number: currentLineNumber-1
+                            },
                             block_content: lines
                         });
                     }
@@ -260,10 +289,10 @@ if (fs.statSync(file).isDirectory()) {
         rl.on('line', captureBlock);
     }
 
-    var awaitBlock = line => {
+    var awaitBlock = (line, lineNumber) => {
         if (line.substr(0, 3) === '```') {
             rl.removeListener('line', awaitBlock);
-            startCapture(line);
+            startCapture(line, lineNumber);
             return;
         }
 
@@ -372,32 +401,40 @@ function parseBlockHeader(startLine, lines) {
 
 
 function render(block, context) {
-    var prepend = '';
-    var append = '';
-    var final = '';
+    var prepend = [];
+    var append = [];
+    var final = [];
 
     block.map(b => {
         var content = b.block_content.join("\n");
         var opts = b.block_header.options || {};
 
+        var meta = b.block_meta;
+
         if (opts.interpret) {
             try {
                 content = interpret(content, context);
+
+                // @todo - implement source map here:
+                // source file = meta.source_file, 
+                // meta.start_line_number
+                // meta.end_line_number
+
             } catch (err) {
                 console.error(err);
             }
         }
 
         if (opts.prepend) {
-            prepend += content + "\n";
+            prepend.push(content);
         } else if (opts.append) {
-            append += content + "\n";
+            append.push(content);
         } else {
-            final += content + "\n";
+            final.push(content);
         }
     })
 
-    return prepend + final + append;
+    return [].concat(prepend,final,append).join("\n");
 }
 
 function interpret(content, context) {
@@ -415,5 +452,37 @@ function interpret(content, context) {
 }
 
 
-main()
+main(argv)
 
+
+if (argv.watch) {
+    const fsmonitor = require('fsmonitor');
+
+    fsmonitor.watch(source_directory, null, change => {
+        console.log("...");
+        console.log("Detected a change...");
+
+        // Some throttling is a good thing.
+        clearTimeout(rerun.timeout);
+        rerun.timeout = setTimeout(rerun, 300);
+    })
+
+    var processIsRunning = false;
+
+
+
+    async function rerun() {
+        if (processIsRunning) {
+            console.log("Another process is still busy...");
+            return;
+        }
+        console.log("Recompiling...");
+        extract_blocks.processedFiles = [];
+
+        processIsRunning = true;
+
+        await main(argv);
+
+        processIsRunning = false;
+    }
+}

@@ -3,12 +3,10 @@ Following link some-folder/index.md
 --- Start build/example.txt ---
 When you run wlkc [directory] the index.md
 should run. This file will be compiled to build/example.txt
-
 --- End build/example.txt ---
 
 --- Start build/example2.txt ---
 This file should also be included in the output.
-
 --- End build/example2.txt ---
 
 Compilation done.

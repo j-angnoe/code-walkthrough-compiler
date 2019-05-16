@@ -1,10 +1,12 @@
 cd "$(dirname $0)";
 
+rm result.txt;
+
 wlkc . --dryrun | grep -v 'Working directory' > result.txt
 
 touch expected.txt;
 
-RESULT="$(diff -uw result.txt expected.txt)";
+RESULT="$(diff -uw expected.txt result.txt)";
 
 if [ -z $RESULT ]; then
     echo "Test passed.";
@@ -13,7 +15,7 @@ else
     echo "There where diffs: "
     # Rerun the command
 
-    diff -uw result.txt expected.txt;
+    diff -uw expected.txt result.txt;
 
     echo;
     echo "Test failed.";

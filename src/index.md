@@ -114,7 +114,7 @@ It may also receive a directory to output in.
         describe: 'Output full context'
     })
     yargs.option('dryrun', {
-        describe: 'Check results without modifying filesystem.'
+        describe: 'Generate results without modifying filesystem.'
     });
 
     << #More program options >>
@@ -128,14 +128,12 @@ It may also receive a directory to output in.
     if (!source_file) {
         throw new Error('Please supply a source file as argument');
     }
-    
-    console.log("Working directory: %s", process.cwd());
 
     if (fs.statSync(source_file).isDirectory()) {
         source_file = path.join(source_file, 'index.md');
     }
-
-    var output_directory = argv.output || path.join(path.dirname(source_file), 'build');
+    var source_directory = path.dirname(source_file);
+    var output_directory = argv.output || path.join(source_directory, 'build');
 
     console.log("Reading file " + source_file);
 ```
@@ -179,12 +177,14 @@ if (!argv.dryrun) {
 
 const path = require('path');
 const mkdirp = require('mkdirp');
+const fs = require('fs');
 
 let VERBOSE = false;
 let DEBUG = false;
 
-async function main() {
-    << # Program options >>
+<< # Program options >> 
+
+async function main(argv) {
 
     << #Collect / extract blocks from given file >>
 
@@ -196,6 +196,7 @@ async function main() {
 
     console.log('Compilation done.');
     << #Post compile operations >>
+    
 }
 ```
 
@@ -251,10 +252,9 @@ we can only start rendering after we have collected all the blocks.
 ```js \
 // <<#extract_blocks>>=
 
-var fs = require('fs');
-var readline = require('readline');
-var EventEmitter = require('events');
-var blockOptionsParser = require('yargs')
+const readline = require('readline');
+const EventEmitter = require('events');
+const blockOptionsParser = require('yargs')
     .option('interpret', {
         alias: 'i'
     })
@@ -276,20 +276,40 @@ function extract_blocks(file, options) {
 
     << #extract_blocks_prevent_double_processing >>
 
-    var rl = readline.createInterface({
+    var _rl = readline.createInterface({
         input: fs.createReadStream(file),
         output: process.stdout,
         terminal: false
     });
 
-    var startCapture = startLine => {        
+    var rl = new EventEmitter();    
+
+    // We want to capture lines and linenumbers!
+    var lineNumber = 0;    
+    _rl.on('line', line => {
+        lineNumber++;
+        rl.emit('line', line, lineNumber);
+    })
+    _rl.on('close', event => {
+        rl.emit('close', event);
+    })
+
+
+    var startCapture = (startLine) => {        
         var lines = [];
-        var captureBlock = line => {
+        var startLineNumber = null;
+
+        var captureBlock = (line, currentLineNumber) => {
             var isBlockEnd = line.substr(0, 3) === '```';
+            
+            if (startLineNumber === null) {
+                startLineNumber = currentLineNumber;
+            }
+
             if (isBlockEnd) {
                 rl.removeListener('line', captureBlock);
                 var header = parseBlockHeader(startLine, lines);
-
+            
                 if (header) {
                     var skipBlock = header.options.skip;
 
@@ -297,6 +317,12 @@ function extract_blocks(file, options) {
                         header.file = file;
                         emitter.emit('block', {
                             block_header: header,
+                            block_meta: {
+                                source_file: file,
+                                // exclude start and end line.
+                                start_line_number: startLineNumber,
+                                end_line_number: currentLineNumber-1
+                            },
                             block_content: lines
                         });
                     }
@@ -310,10 +336,10 @@ function extract_blocks(file, options) {
         rl.on('line', captureBlock);
     }
 
-    var awaitBlock = line => {
+    var awaitBlock = (line, lineNumber) => {
         if (line.substr(0, 3) === '```') {
             rl.removeListener('line', awaitBlock);
-            startCapture(line);
+            startCapture(line, lineNumber);
             return;
         }
 
@@ -418,32 +444,40 @@ It's also possible to import the example file:
 // << #render >>=
 
 function render(block, context) {
-    var prepend = '';
-    var append = '';
-    var final = '';
+    var prepend = [];
+    var append = [];
+    var final = [];
 
     block.map(b => {
         var content = b.block_content.join("\n");
         var opts = b.block_header.options || {};
 
+        var meta = b.block_meta;
+
         if (opts.interpret) {
             try {
                 content = interpret(content, context);
+
+                // @todo - implement source map here:
+                // source file = meta.source_file, 
+                // meta.start_line_number
+                // meta.end_line_number
+
             } catch (err) {
                 console.error(err);
             }
         }
 
         if (opts.prepend) {
-            prepend += content + "\n";
+            prepend.push(content);
         } else if (opts.append) {
-            append += content + "\n";
+            append.push(content);
         } else {
-            final += content + "\n";
+            final.push(content);
         }
     })
 
-    return prepend + final + append;
+    return [].concat(prepend,final,append).join("\n");
 }
 
 function interpret(content, context) {
@@ -546,7 +580,7 @@ You can find this in /build/extractor.php
 << #extract_blocks >>
 << #render >>
 
-main()
+main(argv)
 
 ```
 

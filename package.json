@@ -6,8 +6,9 @@
   "scripts": {
     "build": "./build/bin/wlkc src/index.md -o build",
     "build:next": "./build/bin/wlkc src/index.md -o next",
+    "build:test": "rm -rf next && npm run build:next && PATH=\"$(pwd)/next/bin/:$PATH\" npm test",
     "wlkc": "./build/bin/wlkc",
-    "test" : "sh tests/run-all-tests.sh"
+    "test": "sh tests/run-all-tests.sh"
   },
   "files": [
     "build"
@@ -31,6 +32,7 @@
   },
   "homepage": "https://github.com/j-angnoe/code-walkthrough-compiler#readme",
   "dependencies": {
+    "fsmonitor": "^0.2.4",
     "mkdirp": "^0.5.1",
     "source-map": "^0.7.3",
     "yargs": "^13.2.2"
