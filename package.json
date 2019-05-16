@@ -1,6 +1,6 @@
 {
   "name": "walkthrough-compiler",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A experimental compiler that compiles walkthrough documentation to working programs",
   "main": "build/bin/wlkc",
   "scripts": {
