@@ -91,29 +91,35 @@ supply `--dont-interpret`
 
 ## implementing the walkthrough compiler:
 
-## Overview
+### Overview
 
 Step one: The standalone compiler. It will be a program executed
 from terminal. It will receive an file (entrypoint) as argument.
 It may also receive a directory to output in.
 
 ```js \
-// << #main-arguments >>=
+// << # Program options >>=
+    var yargs = require('yargs');
 
-    var argv = require('yargs')
-        .option('output', {
-            alias: 'o',
-            describe: 'directory to output to'
-        })
-        .option('verbose', {
-            alias: 'v',
-            describe: 'More verbose output'
-        })
-        .option('debug', {
-            describe: 'Output full context'
-        })
-        << #More program actions >>
-        .argv
+    yargs.option('output', {
+        alias: 'o',
+        describe: 'directory to output to'
+    });
+
+    yargs.option('verbose', {
+        alias: 'v',
+        describe: 'More verbose output'
+    })
+    yargs.option('debug', {
+        describe: 'Output full context'
+    })
+    yargs.option('dryrun', {
+        describe: 'Check results without modifying filesystem.'
+    });
+
+    << #More program options >>
+    
+    var argv = yargs.argv
 
     
     var source_file = argv._[0];    
@@ -139,7 +145,7 @@ backup.
 
 ```js \
 // << #main-setup >>=
-
+if (!argv.dryrun) { 
     // @todo - clear out build directory.
 
     /* 
@@ -161,6 +167,7 @@ backup.
     system("mv '$output_directory' '$backup_directory/$date'");
     system("mkdir -p '$output_directory';");
     */
+}
 ```
 
 ```js \
@@ -173,7 +180,7 @@ let VERBOSE = false;
 let DEBUG = false;
 
 async function main() {
-    << #main-arguments >>
+    << # Program options >>
 
     << #Collect / extract blocks from given file >>
 
@@ -488,7 +495,15 @@ We'll only skip writing blocks that start with #.
             return;
         }
 
+
         var output_file = path.join(output_directory, fileId);
+
+        if (argv.dryrun) {
+            console.log("--- Start %s ---", output_file);
+            console.log(file.content);
+            console.log("--- End %s ---\n", output_file);
+            return;
+        }
 
         try { 
             mkdirp.sync(path.dirname(output_file));

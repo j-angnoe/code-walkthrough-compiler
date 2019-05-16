@@ -7,25 +7,31 @@ let VERBOSE = false;
 let DEBUG = false;
 
 async function main() {
-    
-    var argv = require('yargs')
-        .option('output', {
-            alias: 'o',
-            describe: 'directory to output to'
-        })
-        .option('verbose', {
-            alias: 'v',
-            describe: 'More verbose output'
-        })
-        .option('debug', {
-            describe: 'Output full context'
-        })
-            .option('action', {
+        var yargs = require('yargs');
+
+    yargs.option('output', {
+        alias: 'o',
+        describe: 'directory to output to'
+    });
+
+    yargs.option('verbose', {
+        alias: 'v',
+        describe: 'More verbose output'
+    })
+    yargs.option('debug', {
+        describe: 'Output full context'
+    })
+    yargs.option('dryrun', {
+        describe: 'Check results without modifying filesystem.'
+    });
+
+        yargs.option('action', {
         alias: 'x',
         description: 'Immediately run a block'
-    })
+    });
 
-        .argv
+    
+    var argv = yargs.argv
 
     
     var source_file = argv._[0];    
@@ -100,7 +106,15 @@ async function main() {
             return;
         }
 
+
         var output_file = path.join(output_directory, fileId);
+
+        if (argv.dryrun) {
+            console.log("--- Start %s ---", output_file);
+            console.log(file.content);
+            console.log("--- End %s ---\n", output_file);
+            return;
+        }
 
         try { 
             mkdirp.sync(path.dirname(output_file));

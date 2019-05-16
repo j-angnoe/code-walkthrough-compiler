@@ -146,11 +146,11 @@ To make it easier for users, you dont have to write a block-name will resolve
 both block-name and #block-name.
 
 ```js \
-// << #More program actions >>+=
-    .option('action', {
+// << #More program options >>+=
+    yargs.option('action', {
         alias: 'x',
         description: 'Immediately run a block'
-    })
+    });
 ```
 
 To make this happen, we just need to interpret 
@@ -210,4 +210,47 @@ somefile.md
 if (fs.statSync(file).isDirectory()) {
     file = path.join(file, 'index.md');
 }
+```
+
+
+## Ability to reverse the actions executed by the file.
+Sometimes you might want to be able to reverse the `damage` done by the compiler. The damage being: all files that have been created by the compiler. For this, we might want to add a `--reverse` option. This occurs when you choose to build (-o/--output .) to the current directory, instead of a dedicated build directory.
+There are other solutions to this, one can simply perform a `git reset --hard` or `git clean -f` to clear these files. So i'll wait for it. We might want to have a more accurate bookkeeping, to register which files and folders we've created, and persist these to some directory, but this will add more complexity to the solution.
+
+## Ability to append to a file which does not originate from our markdown file(s)
+Usecases: Add some lines to some configuration file (for instance /etc/hosts). The difficulty here is to prevent these additions to be performed on every compile. So, preferedly this action is run manually, or interactively, inside a walkthrough viewer or something... 
+
+## Ability to define and reference path constants
+Usecase: When you have a lot of files inside some deep path you may want to prevent repeating the long path a lot of times. This also allows you to be more flexible. So, a way to define a path constant and a mechanism for referencing these
+inside the paths.
+
+## Source map support:
+
+Experiment
+
+Documentation: 
+https://github.com/evanw/node-source-map-support
+https://github.com/mozilla/source-map
+
+Sourcemaps v3 spec (2011)
+https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k/edit#
+
+Step 1: Let the compiler also output a source map.
+
+```js \
+<< tmp/tryout-source-maps.js >>
+const SourceNode = require('source-map').SourceNode;
+
+var sn = new SourceNode(1,1,"myfile.js", [
+    'hallo hoe is het?'
+]);
+
+var map = sn.toStringWithSourceMap({file: 'test.map.js'});
+
+console.log(map, map.map.toString());
+
+```
+
+```action << #tryout-sourcemaps >>
+node tmp/tryout-source-maps.js
 ```

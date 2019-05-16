@@ -5,8 +5,8 @@
   "main": "build/bin/wlkc",
   "scripts": {
     "build": "./build/bin/wlkc src/index.md -o build",
-    "build:next" : "./build/bin/wlkc src/index.md -o next",
-    "wlkc" : "./build/bin/wlkc"
+    "build:next": "./build/bin/wlkc src/index.md -o next",
+    "wlkc": "./build/bin/wlkc"
   },
   "files": [
     "build"
@@ -31,6 +31,7 @@
   "homepage": "https://github.com/j-angnoe/code-walkthrough-compiler#readme",
   "dependencies": {
     "mkdirp": "^0.5.1",
+    "source-map": "^0.7.3",
     "yargs": "^13.2.2"
   }
 }
