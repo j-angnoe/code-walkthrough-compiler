@@ -1,5 +1,25 @@
 # Source map support:
 
+## How to enable sourcemaps in your project
+
+Let's say you are building either a web- or nodejs application:
+
+You need to include the `source-map-support` library in your application
+
+`npm install source-map-support` from https://github.com/evanw/node-source-map-support
+
+At the start of your application:
+
+`require('source-map-support').install()`
+
+When compiling the application, please add the --sourcemaps option to 
+your wlkc command:
+
+`wlkc my-source.md -o build --sourcemaps`
+
+That's all.
+
+
 ## How it works
 
 Using the [Source map library from Mozilla](https://github.com/mozilla/source-map)
