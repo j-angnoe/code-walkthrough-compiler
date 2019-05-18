@@ -225,42 +225,6 @@ Usecase: When you have a lot of files inside some deep path you may want to prev
 inside the paths.
 
 
-
-## Source map support:
-
-Experiment
-
-Documentation: 
-https://github.com/evanw/node-source-map-support
-https://github.com/mozilla/source-map
-
-Sourcemaps v3 spec (2011)
-https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k/edit#
-
-Step 1: Let the compiler also output a source map.
-
-```js \
-<< tmp/tryout-source-maps.js >> --skip
-const SourceNode = require('source-map').SourceNode;
-
-var sn = new SourceNode(1,1,"myfile.js", [
-    'hallo hoe is het?'
-]);
-
-var map = sn.toStringWithSourceMap({file: 'test.map.js'});
-
-console.log(map, map.map.toString());
-
-```
-
-```action << #tryout-sourcemaps >> --skip
-node tmp/tryout-source-maps.js
-```
-
-If we want to do this, the extract_blocks should export extra information,
-about source files and start/end linenumbers of chunks. The groundwork has
-been laid down...
-
 ## Watcher option
 
 ```js \

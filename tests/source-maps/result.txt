@@ -1,0 +1,34 @@
+Reading file index.md
+--- Start build/index.html ---
+<html>
+<body>
+    Hello, check the source.
+    <script src="script.js"></script>
+</body>
+</html>
+
+--- End build/index.html ---
+
+--- Start build/script.js.map ---
+{"version":3,"sources":["index.md"],"names":[],"mappings":"AAqBA;AACA;AACA;AACA;AACA;AACA;AAQA;AACA;AACA;AACA;AATA;AACA;AACA"}
+--- End build/script.js.map ---
+
+--- Start build/script.js ---
+// index.md regel 13 for the record
+
+var HALLO = 'haal';
+
+console.log("Which line is this?");
+
+// this should be index.md line 24.
+
+console.log("Hello 2");
+console.log("Hello 3");
+
+console.log("Hello");
+
+
+//# sourceMappingURL=script.js.map
+--- End build/script.js ---
+
+Compilation done.

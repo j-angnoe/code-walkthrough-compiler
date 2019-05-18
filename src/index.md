@@ -297,14 +297,9 @@ function extract_blocks(file, options) {
 
     var startCapture = (startLine) => {        
         var lines = [];
-        var startLineNumber = null;
 
         var captureBlock = (line, currentLineNumber) => {
             var isBlockEnd = line.substr(0, 3) === '```';
-            
-            if (startLineNumber === null) {
-                startLineNumber = currentLineNumber;
-            }
 
             if (isBlockEnd) {
                 rl.removeListener('line', captureBlock);
@@ -312,6 +307,11 @@ function extract_blocks(file, options) {
             
                 if (header) {
                     var skipBlock = header.options.skip;
+
+                    // Count backwards from end of block (because
+                    // of multi-line headers)
+                    
+                    var startLineNumber = currentLineNumber-lines.length;
 
                     if (!skipBlock) {
                         header.file = file;
@@ -443,16 +443,26 @@ It's also possible to import the example file:
 ```js \
 // << #render >>=
 
+const SourceNode = require('source-map').SourceNode;
+
 function render(block, context) {
     var prepend = [];
     var append = [];
     var final = [];
 
-    block.map(b => {
-        var content = b.block_content.join("\n");
-        var opts = b.block_header.options || {};
+    var DRYRUN = argv.dryrun;
 
+
+    
+    block.map(b => {
+        
+        var opts = b.block_header.options || {};
         var meta = b.block_meta;
+
+        // This is not ideal, but ja.
+        var content = b.block_content.map(l => `${l}\n`);
+
+        var sn = new SourceNode(meta.start_line_number, 0, meta.source_file);
 
         if (opts.interpret) {
             try {
@@ -466,31 +476,55 @@ function render(block, context) {
             } catch (err) {
                 console.error(err);
             }
-        }
+        } 
 
+        var currentLine = meta.start_line_number - 1;
+
+        sn.add(content.map(l => {
+            currentLine++;
+
+            if (typeof l === 'string') {
+                return new SourceNode(currentLine,0,meta.source_file, l);
+            } else {
+                return l;
+            }
+        }));
+        
         if (opts.prepend) {
-            prepend.push(content);
+            prepend.push(sn);
         } else if (opts.append) {
-            append.push(content);
+            append.push(sn);
         } else {
-            final.push(content);
+            final.push(sn);
         }
     })
 
-    return [].concat(prepend,final,append).join("\n");
+    return new SourceNode(null,null,null, [].concat(prepend,final,append));//.join("\n");
 }
 
 function interpret(content, context) {
     // Ability to parse \<\< Chunkname \>\> references.
-    content = content.replace(/(^|(\n\s*))<<\s*(.+?)\s*>>/g, (match, space, spaceBound, includeId) => {
-        // When a block cannot be found, just print a notice.
-        if (!(includeId in context)) {
-            console.log('[notice]: `' + includeId + ' not found');
-            return '';
-        }
-        return (space||'') + render(context[includeId], context);
-    });
 
+    content = content.map(line => {
+       var noWebReferenceRE =  /(^|(\n\s*))<<\s*(.+?)\s*>>/;
+
+       var match = line.match(noWebReferenceRE);
+
+       if (match) {
+           var [_, space, spaceBound, includeId] = match;
+
+            if (!(includeId in context)) {
+                console.log('[notice]: `' + includeId + ' not found');
+                return '';
+            }   
+
+            return new SourceNode(null,null,null, [space||'', render(context[includeId], context)]);
+       }
+
+       return line;
+    })
+
+   return content;
     << #extra-interpreter-stuff >>
 
     return content;
@@ -506,11 +540,18 @@ to render all our collected blocks.
     // Step two: Render/interpret 
     var renderedFiles = {};
     Object.keys(context).map(blockId => {
-        var renderedContent = render(context[blockId], context);
+        var renderedContent = render(context[blockId], context).toStringWithSourceMap();
+
+
+        var code = renderedContent.code;
+        
+        << # Output sourcemaps >> 
+
         renderedFiles[blockId] = {
             options: blockOptions[blockId],
-            content: renderedContent,
+            content: code,
         };
+
     })
 
     if (DEBUG) {
@@ -592,14 +633,17 @@ Q.E.D.
 ## Advanced options:
 
 - [Advanced subjects](advanced-subjects.md)
+- [Source maps](source-maps.md)
 
 Now run:
 `./build/bin/wlkc src/index.md -o build` to compile this document to a walkthrough compiler.
 
 
 ## Room for improvement
-- Codeblock filename and options aren't rendered properly by Github Flavoured Markdown [GFM Fix](./fixing-github-flavoured-markdown.md)
-  this should be changed. Maybe something like 
+- Codeblock filename and options aren't rendered properly by Github Flavoured Markdown. 
+  This should be changed. 
+  For now we have the workaround, moving the block header to the next line
+  see [GFM Fix](./fixing-github-flavoured-markdown.md)
 - Include images / usable assets
 
 

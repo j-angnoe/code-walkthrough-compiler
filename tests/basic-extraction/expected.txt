@@ -2,11 +2,13 @@ Reading file index.md
 --- Start build/file1.txt ---
 File 1 content
 This will be appended to file 1
+
 --- End build/file1.txt ---
 
 --- Start build/file2.txt ---
 File 2 content
 This line will be added to file2.txt
+
 --- End build/file2.txt ---
 
 --- Start build/file4.txt ---
@@ -17,6 +19,7 @@ Reference block 1 content
 
 And again:
 Reference block 1 content
+
 --- End build/file4.txt ---
 
 Compilation done.

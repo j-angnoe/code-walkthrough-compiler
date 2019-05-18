@@ -8,7 +8,7 @@ touch expected.txt;
 
 RESULT="$(diff -uw expected.txt result.txt)";
 
-if [ -z $RESULT ]; then
+if [ -z "$RESULT" ]; then
     echo "Test passed.";
     exit 0;
 else 

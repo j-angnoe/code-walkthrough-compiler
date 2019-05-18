@@ -4,7 +4,7 @@ cd "$(dirname $0)";
 
 rm result.txt;
 
-wlkc . --dryrun | grep -v 'Working directory' > result.txt
+wlkc . --dryrun --sourcemaps > result.txt
 
 touch expected.txt;
 
