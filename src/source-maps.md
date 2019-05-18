@@ -59,7 +59,7 @@ var writeSourceMapFile = false;
 if (code.match(/#\s*sourceMappingURL(=.+)*/)) {
     writeSourceMapFile = true;
     code = code.replace(/(\n.*#\s*sourceMappingURL)(=.+)/, (match,first,second) => {
-        return `${first}=${blockId}.map`;
+        return `${first}=${path.basename(blockId)}.map`;
     });
 } 
     
@@ -71,7 +71,7 @@ if (writeSourceMapFile || argv.sourcemaps) {
     if (appendSourceMappingURL) {
 
         let isJavascript = blockId.match(/\.js$/);   
-        let mappingPiece = `sourceMappingURL=${blockId}.map`;
+        let mappingPiece = `sourceMappingURL=${path.basename(blockId)}.map`;
 
         if (isJavascript) {
             code += `\n//# ${mappingPiece}`;

@@ -102,7 +102,7 @@ var writeSourceMapFile = false;
 if (code.match(/#\s*sourceMappingURL(=.+)*/)) {
     writeSourceMapFile = true;
     code = code.replace(/(\n.*#\s*sourceMappingURL)(=.+)/, (match,first,second) => {
-        return `${first}=${blockId}.map`;
+        return `${first}=${path.basename(blockId)}.map`;
     });
 } 
     
@@ -114,7 +114,7 @@ if (writeSourceMapFile || argv.sourcemaps) {
     if (appendSourceMappingURL) {
 
         let isJavascript = blockId.match(/\.js$/);   
-        let mappingPiece = `sourceMappingURL=${blockId}.map`;
+        let mappingPiece = `sourceMappingURL=${path.basename(blockId)}.map`;
 
         if (isJavascript) {
             code += `\n//# ${mappingPiece}`;
@@ -452,8 +452,11 @@ function render(block, context) {
 
         var blockId = b.block_header.id;
 
-        var source_file_relative = relative(blockId, meta.source_file)
-
+        // There is a bug here.
+        // if I pass bin/ablayer it will return ../../src/index.md
+        // which should be ../src/index.md
+        var source_file_relative = relative(blockId, meta.source_file);
+        
         // This is not ideal, but ja.
         var content = b.block_content.map(l => `${l}\n`);
 

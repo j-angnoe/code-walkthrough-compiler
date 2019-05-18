@@ -462,8 +462,11 @@ function render(block, context) {
 
         var blockId = b.block_header.id;
 
-        var source_file_relative = relative(blockId, meta.source_file)
-
+        // There is a bug here.
+        // if I pass bin/ablayer it will return ../../src/index.md
+        // which should be ../src/index.md
+        var source_file_relative = relative(blockId, meta.source_file);
+        
         // This is not ideal, but ja.
         var content = b.block_content.map(l => `${l}\n`);
 

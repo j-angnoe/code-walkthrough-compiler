@@ -37,7 +37,7 @@ console.log("Hello");
 
 --- Start build/a/b/c/test-binary ---
 
-// # sourceMappingURL=a/b/c/test-binary.map
+// # sourceMappingURL=test-binary.map
 
 
 --- End build/a/b/c/test-binary ---
