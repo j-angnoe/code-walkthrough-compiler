@@ -10,7 +10,7 @@ Reading file index.md
 --- End build/index.html ---
 
 --- Start build/script.js.map ---
-{"version":3,"sources":["index.md"],"names":[],"mappings":"AAqBA;AACA;AACA;AACA;AACA;AACA;AAQA;AACA;AACA;AACA;AATA;AACA;AACA"}
+{"version":3,"sources":["index.md","../index.md"],"names":[],"mappings":"AAqBA;AACA;AACA;AACA;AACA;AACA;ACQA;AACA;AACA;AACA;ADTA;AACA;AACA"}
 --- End build/script.js.map ---
 
 --- Start build/script.js ---
@@ -30,5 +30,16 @@ console.log("Hello");
 
 //# sourceMappingURL=script.js.map
 --- End build/script.js ---
+
+--- Start build/a/b/c/test-binary.map ---
+{"version":3,"sources":["../../../../index.md"],"names":[],"mappings":"AAgDA;AACA;AACA"}
+--- End build/a/b/c/test-binary.map ---
+
+--- Start build/a/b/c/test-binary ---
+
+// # sourceMappingURL=a/b/c/test-binary.map
+
+
+--- End build/a/b/c/test-binary ---
 
 Compilation done.

@@ -37,3 +37,17 @@ console.log("Hello");
 console.log("Hello 2");
 console.log("Hello 3");
 ```
+
+
+## Force sourcemaps for some file
+This inline source map will force wlkc to generate a .map
+file for this particular file.
+The references to source files will be correct (relative to 
+the path of the sourcemap file).
+
+```test a/b/c/test-binary
+
+// # sourceMappingURL=xxx
+
+```
+

@@ -41,23 +41,33 @@ https://medium.com/@toolmantim/getting-started-with-css-sourcemaps-and-in-browse
 
 
 ```js \
-<< # Program options >>+=
+<< #More program options >>
 yargs.option('sourcemaps', {
     description: 'Output sourcemaps',
-    default: false
 });
 ```
 
 Currently, only javascript and css files will get a sourcemap.
 
+When you add a `# sourceMappingURL=` to a document it will get a sourcemap
+too. Useful for binaries.
+
 ```js \
 << # Output sourcemaps >> 
-if (argv.sourcemaps) {
 
-    //console.log(context[blockId]);
+var writeSourceMapFile = false;
+if (code.match(/#\s*sourceMappingURL(=.+)*/)) {
+    writeSourceMapFile = true;
+    code = code.replace(/(\n.*#\s*sourceMappingURL)(=.+)/, (match,first,second) => {
+        return `${first}=${blockId}.map`;
+    });
+} 
+    
+if (writeSourceMapFile || argv.sourcemaps) {
 
+    let appendSourceMappingURL = blockId.match(/\.(js|css)$/);
+    
 
-    var appendSourceMappingURL = blockId.match(/\.(js|css)$/);
     if (appendSourceMappingURL) {
 
         let isJavascript = blockId.match(/\.js$/);   
@@ -68,7 +78,9 @@ if (argv.sourcemaps) {
         } else {
             code += `\n/*# ${mappingPiece}`;
         }
+    }
 
+    if (writeSourceMapFile || appendSourceMappingURL) {
         renderedFiles[`${blockId}.map`] = {
             options: {},
             content: renderedContent.map.toString()
@@ -76,7 +88,27 @@ if (argv.sourcemaps) {
     }
 }
 
+//throw new Error('test');
+
 ```
+
+Enable sourcemaps on wlkc:
+```js extractor.js --prepend
+require('source-map-support').install();
+```
+
+
+## One challenge remaining:
+
+Sourcemaps will need to point to a a source file.
+Let's say I have the following setup:
+
+src/index.md, which exports build/a/b/c/script.js
+The sourcemap will be exported to build/a/b/c/script.js.map
+... We need something like: https://github.com/jonschlinkert/relative
+
+
+
 ## Integrating it for nodejs binaries
 
 https://github.com/evanw/node-source-map-support will allow us to install 

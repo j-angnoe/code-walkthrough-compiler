@@ -451,6 +451,7 @@ function render(block, context) {
     var final = [];
 
     var DRYRUN = argv.dryrun;
+    var relative = require('relative');
 
 
     
@@ -459,10 +460,14 @@ function render(block, context) {
         var opts = b.block_header.options || {};
         var meta = b.block_meta;
 
+        var blockId = b.block_header.id;
+
+        var source_file_relative = relative(blockId, meta.source_file)
+
         // This is not ideal, but ja.
         var content = b.block_content.map(l => `${l}\n`);
 
-        var sn = new SourceNode(meta.start_line_number, 0, meta.source_file);
+        var sn = new SourceNode(meta.start_line_number, 0, source_file_relative);
 
         if (opts.interpret) {
             try {
@@ -484,7 +489,7 @@ function render(block, context) {
             currentLine++;
 
             if (typeof l === 'string') {
-                return new SourceNode(currentLine,0,meta.source_file, l);
+                return new SourceNode(currentLine,0, source_file_relative, l);
             } else {
                 return l;
             }
