@@ -41,7 +41,7 @@ https://medium.com/@toolmantim/getting-started-with-css-sourcemaps-and-in-browse
 
 
 ```js \
-<< Program options >>+=
+<< # Program options >>+=
 yargs.option('sourcemaps', {
     description: 'Output sourcemaps',
     default: false
@@ -53,6 +53,8 @@ Currently, only javascript and css files will get a sourcemap.
 ```js \
 << # Output sourcemaps >> 
 if (argv.sourcemaps) {
+
+    //console.log(context[blockId]);
 
 
     var appendSourceMappingURL = blockId.match(/\.(js|css)$/);

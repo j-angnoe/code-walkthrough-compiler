@@ -310,7 +310,7 @@ function extract_blocks(file, options) {
 
                     // Count backwards from end of block (because
                     // of multi-line headers)
-                    
+
                     var startLineNumber = currentLineNumber-lines.length;
 
                     if (!skipBlock) {
@@ -506,12 +506,12 @@ function interpret(content, context) {
     // Ability to parse \<\< Chunkname \>\> references.
 
     content = content.map(line => {
-       var noWebReferenceRE =  /(^|(\n\s*))<<\s*(.+?)\s*>>/;
+       var noWebReferenceRE =  /(^|^\s*)<<\s*(.+?)\s*>>/;
 
        var match = line.match(noWebReferenceRE);
 
        if (match) {
-           var [_, space, spaceBound, includeId] = match;
+           var [_, space , includeId] = match;
 
             if (!(includeId in context)) {
                 console.log('[notice]: `' + includeId + ' not found');

@@ -32,7 +32,6 @@ let DEBUG = false;
         alias: 'x',
         description: 'Immediately run a block'
     });
-
     
     var argv = yargs.argv
     var source_file = argv._[0];    
@@ -51,7 +50,10 @@ let DEBUG = false;
     var output_directory = argv.output || path.join(source_directory, 'build');
 
     console.log("Reading file " + source_file);
- 
+yargs.option('sourcemaps', {
+    description: 'Output sourcemaps',
+    default: false
+});
 
 async function main(argv) {
 
@@ -86,22 +88,50 @@ async function main(argv) {
         console.info('[debug] context: ' + JSON.stringify(context, null, 3));
     }
 
-
     
     // Step two: Render/interpret 
     var renderedFiles = {};
     Object.keys(context).map(blockId => {
-        var renderedContent = render(context[blockId], context);
+        var renderedContent = render(context[blockId], context).toStringWithSourceMap();
+
+
+        var code = renderedContent.code;
+        
+        if (argv.sourcemaps) {
+
+    //console.log(context[blockId]);
+
+
+    var appendSourceMappingURL = blockId.match(/\.(js|css)$/);
+    if (appendSourceMappingURL) {
+
+        let isJavascript = blockId.match(/\.js$/);   
+        let mappingPiece = `sourceMappingURL=${blockId}.map`;
+
+        if (isJavascript) {
+            code += `\n//# ${mappingPiece}`;
+        } else {
+            code += `\n/*# ${mappingPiece}`;
+        }
+
+        renderedFiles[`${blockId}.map`] = {
+            options: {},
+            content: renderedContent.map.toString()
+        }
+    }
+}
+
+
         renderedFiles[blockId] = {
             options: blockOptions[blockId],
-            content: renderedContent,
+            content: code,
         };
+
     })
 
     if (DEBUG) {
         console.info('[debug] rendered files: ' + JSON.stringify(renderedFiles, null, 3));
     }
-
     
     
     // Step three: Write to disk.
@@ -147,12 +177,10 @@ if (file.options.chmod) {
     require('fs').chmodSync(output_file, octalPermissions);
 }
 
-
                 resolve();
             });
         });
     })
-
 
     await Promise.all(promises);
 
@@ -186,10 +214,8 @@ if (argv.action) {
         });
     }
 }
-
     
 }
-
 
 const readline = require('readline');
 const EventEmitter = require('events');
@@ -211,7 +237,6 @@ function extract_blocks(file, options) {
 if (fs.statSync(file).isDirectory()) {
     file = path.join(file, 'index.md');
 }
-
     var {followLinks} = options || {};
     
     var promises = [];
@@ -227,7 +252,6 @@ if (fs.statSync(file).isDirectory()) {
         return emitter;        
     }
     extract_blocks.processedFiles.push(file);
-
 
     var _rl = readline.createInterface({
         input: fs.createReadStream(file),
@@ -250,14 +274,9 @@ if (fs.statSync(file).isDirectory()) {
 
     var startCapture = (startLine) => {        
         var lines = [];
-        var startLineNumber = null;
 
         var captureBlock = (line, currentLineNumber) => {
             var isBlockEnd = line.substr(0, 3) === '```';
-            
-            if (startLineNumber === null) {
-                startLineNumber = currentLineNumber;
-            }
 
             if (isBlockEnd) {
                 rl.removeListener('line', captureBlock);
@@ -265,6 +284,11 @@ if (fs.statSync(file).isDirectory()) {
             
                 if (header) {
                     var skipBlock = header.options.skip;
+
+                    // Count backwards from end of block (because
+                    // of multi-line headers)
+
+                    var startLineNumber = currentLineNumber-lines.length;
 
                     if (!skipBlock) {
                         header.file = file;
@@ -326,7 +350,6 @@ if (fs.statSync(file).isDirectory()) {
             }))
         }
     }
-
     }
 
     var res = rl.on('line', awaitBlock);
@@ -355,7 +378,6 @@ function parseBlockHeader(startLine, lines) {
 
         startLine = startLine.substr(0, -1) + " " + extraLine;
     }
-
 
 
     // Split options
@@ -399,17 +421,26 @@ function parseBlockHeader(startLine, lines) {
 }
 
 
+const SourceNode = require('source-map').SourceNode;
 
 function render(block, context) {
     var prepend = [];
     var append = [];
     var final = [];
 
-    block.map(b => {
-        var content = b.block_content.join("\n");
-        var opts = b.block_header.options || {};
+    var DRYRUN = argv.dryrun;
 
+
+    
+    block.map(b => {
+        
+        var opts = b.block_header.options || {};
         var meta = b.block_meta;
+
+        // This is not ideal, but ja.
+        var content = b.block_content.map(l => `${l}\n`);
+
+        var sn = new SourceNode(meta.start_line_number, 0, meta.source_file);
 
         if (opts.interpret) {
             try {
@@ -423,34 +454,58 @@ function render(block, context) {
             } catch (err) {
                 console.error(err);
             }
-        }
+        } 
 
+        var currentLine = meta.start_line_number - 1;
+
+        sn.add(content.map(l => {
+            currentLine++;
+
+            if (typeof l === 'string') {
+                return new SourceNode(currentLine,0,meta.source_file, l);
+            } else {
+                return l;
+            }
+        }));
+        
         if (opts.prepend) {
-            prepend.push(content);
+            prepend.push(sn);
         } else if (opts.append) {
-            append.push(content);
+            append.push(sn);
         } else {
-            final.push(content);
+            final.push(sn);
         }
     })
 
-    return [].concat(prepend,final,append).join("\n");
+    return new SourceNode(null,null,null, [].concat(prepend,final,append));//.join("\n");
 }
 
 function interpret(content, context) {
     // Ability to parse \<\< Chunkname \>\> references.
-    content = content.replace(/(^|(\n\s*))<<\s*(.+?)\s*>>/g, (match, space, spaceBound, includeId) => {
-        // When a block cannot be found, just print a notice.
-        if (!(includeId in context)) {
-            console.log('[notice]: `' + includeId + ' not found');
-            return '';
-        }
-        return (space||'') + render(context[includeId], context);
-    });
+
+    content = content.map(line => {
+       var noWebReferenceRE =  /(^|^\s*)<<\s*(.+?)\s*>>/;
+
+       var match = line.match(noWebReferenceRE);
+
+       if (match) {
+           var [_, space , includeId] = match;
+
+            if (!(includeId in context)) {
+                console.log('[notice]: `' + includeId + ' not found');
+                return '';
+            }   
+
+            return new SourceNode(null,null,null, [space||'', render(context[includeId], context)]);
+       }
+
+       return line;
+    })
+
+   return content;
 
     return content;
 }
-
 
 main(argv)
 

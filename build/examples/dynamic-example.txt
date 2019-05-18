@@ -2,8 +2,6 @@ Inside this file we may use special syntax to include blocks:
 This is an example block and wont be exported to filesystem.
 But, we can reference it later.
 
-
 It's also possible to import the example file:
 
 These lines will be appended to the file.
-
